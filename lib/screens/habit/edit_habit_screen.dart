@@ -18,22 +18,20 @@ class EditHabitScreen extends StatefulWidget {
 class _EditHabitScreenState extends State<EditHabitScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late String _selectedFrequency;
-
-  final List<String> _frequencies = ['Daily', 'Weekly'];
+  late int _targetDays;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.habit.name);
-    _selectedFrequency = widget.habit.frequency;
+    _targetDays = widget.habit.targetDaysPerWeek;
   }
 
   Future<void> _updateHabit() async {
     if (_formKey.currentState!.validate()) {
       final updatedHabit = widget.habit.copyWith(
         name: _nameController.text.trim(),
-        frequency: _selectedFrequency,
+        targetDaysPerWeek: _targetDays,
       );
 
       await DbHelper.updateHabit(updatedHabit);
@@ -72,33 +70,27 @@ class _EditHabitScreenState extends State<EditHabitScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Frequency Selection
+            // Target Selection
             const Text(
-              'Frekuensi',
+              'Target Hari per Minggu',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
-              children: _frequencies.map((f) {
-                final isSelected = _selectedFrequency == f;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12.0),
-                  child: ChoiceChip(
-                    label: Text(f),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedFrequency = f);
-                      }
-                    },
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
-              }).toList(),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('$_targetDays Hari', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Slider(
+                  value: _targetDays.toDouble(),
+                  min: 1,
+                  max: 7,
+                  divisions: 6,
+                  activeColor: AppColors.primary,
+                  onChanged: (value) {
+                    setState(() => _targetDays = value.toInt());
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 40),
 

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
-import '../../models/deck_model.dart';
-import '../../models/flashcard_model.dart';
+import '../../models/subject_model.dart';
+import '../../models/glossary_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
-import 'deck_detail_screen.dart';
+import 'glossary_detail_screen.dart';
 
-class DeckListScreen extends StatefulWidget {
-  const DeckListScreen({super.key});
+class GlossarySubjectScreen extends StatefulWidget {
+  const GlossarySubjectScreen({super.key});
 
   @override
-  State<DeckListScreen> createState() => _DeckListScreenState();
+  State<GlossarySubjectScreen> createState() => _GlossarySubjectScreenState();
 }
 
-class _DeckListScreenState extends State<DeckListScreen> {
-  List<DeckModel> _decks = [];
-  Map<int, List<FlashcardModel>> _deckCards = {};
+class _GlossarySubjectScreenState extends State<GlossarySubjectScreen> {
+  List<SubjectModel> _subjects = [];
+  Map<int, List<GlossaryModel>> _subjectGlossaries = {};
   bool _isLoading = true;
 
   final List<int> _colorOptions = [
@@ -33,22 +33,22 @@ class _DeckListScreenState extends State<DeckListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDecks();
+    _loadSubjects();
   }
 
-  Future<void> _loadDecks() async {
+  Future<void> _loadSubjects() async {
     setState(() => _isLoading = true);
     try {
-      final decks = await DbHelper.getAllDecks();
-      final Map<int, List<FlashcardModel>> cardsMap = {};
-      for (final deck in decks) {
-        if (deck.id != null) {
-          cardsMap[deck.id!] = await DbHelper.getAllFlashcards(deck.id!);
+      final subjects = await DbHelper.getAllSubjects();
+      final Map<int, List<GlossaryModel>> glossaryMap = {};
+      for (final subject in subjects) {
+        if (subject.id != null) {
+          glossaryMap[subject.id!] = await DbHelper.getAllGlossaries(subject.id!);
         }
       }
       setState(() {
-        _decks = decks;
-        _deckCards = cardsMap;
+        _subjects = subjects;
+        _subjectGlossaries = glossaryMap;
         _isLoading = false;
       });
     } catch (e) {
@@ -56,17 +56,17 @@ class _DeckListScreenState extends State<DeckListScreen> {
     }
   }
 
-  Future<void> _deleteDeck(int id) async {
-    await DbHelper.deleteDeck(id);
-    _loadDecks();
+  Future<void> _deleteSubject(int id) async {
+    await DbHelper.deleteSubject(id);
+    _loadSubjects();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deck berhasil dihapus')),
+        const SnackBar(content: Text('Mata Kuliah/Subjek berhasil dihapus')),
       );
     }
   }
 
-  void _showAddDeckSheet() {
+  void _showAddSubjectSheet() {
     final titleController = TextEditingController();
     final descController = TextEditingController();
     int selectedColor = _colorOptions[0];
@@ -106,7 +106,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Buat Deck Baru',
+                      'Buat Subjek Baru',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -116,9 +116,9 @@ class _DeckListScreenState extends State<DeckListScreen> {
                     const SizedBox(height: 20),
                     CustomTextField(
                       controller: titleController,
-                      labelText: 'Nama Deck',
+                      labelText: 'Nama Subjek',
                       hintText: 'Contoh: Pemrograman Mobile',
-                      prefixIcon: Icons.folder_rounded,
+                      prefixIcon: Icons.book_rounded,
                     ),
                     const SizedBox(height: 16),
                     CustomTextField(
@@ -176,25 +176,25 @@ class _DeckListScreenState extends State<DeckListScreen> {
                     ),
                     const SizedBox(height: 24),
                     CustomButton(
-                      text: 'Simpan Deck',
+                      text: 'Simpan Subjek',
                       icon: Icons.save_rounded,
                       onTap: () async {
                         if (titleController.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Nama deck tidak boleh kosong')),
+                            const SnackBar(content: Text('Nama subjek tidak boleh kosong')),
                           );
                           return;
                         }
-                        final deck = DeckModel(
+                        final subject = SubjectModel(
                           title: titleController.text.trim(),
                           description: descController.text.trim(),
                           color: selectedColor,
                         );
-                        await DbHelper.insertDeck(deck);
+                        await DbHelper.insertSubject(subject);
                         if (context.mounted) {
                           Navigator.pop(context);
                         }
-                        _loadDecks();
+                        _loadSubjects();
                       },
                     ),
                   ],
@@ -213,17 +213,17 @@ class _DeckListScreenState extends State<DeckListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flashcards'),
+        title: const Text('Concept Glossary'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _decks.isEmpty
+          : _subjects.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.view_carousel_outlined,
+                        Icons.book_rounded,
                         size: 72,
                         color: isDark
                             ? AppColors.darkTextSecondary.withValues(alpha: 0.5)
@@ -231,7 +231,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Belum ada deck flashcard',
+                        'Belum ada subjek',
                         style: TextStyle(
                           fontSize: 16,
                           color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -240,7 +240,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Buat deck baru untuk mulai belajar!',
+                        'Tambahkan subjek baru untuk menyimpan glosarium!',
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -251,13 +251,11 @@ class _DeckListScreenState extends State<DeckListScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  itemCount: _decks.length,
+                  itemCount: _subjects.length,
                   itemBuilder: (context, index) {
-                    final deck = _decks[index];
-                    final cards = _deckCards[deck.id] ?? [];
-                    final learnedCount = cards.where((c) => c.isLearned).length;
-                    final totalCount = cards.length;
-                    final progress = totalCount > 0 ? learnedCount / totalCount : 0.0;
+                    final subject = _subjects[index];
+                    final glossaries = _subjectGlossaries[subject.id] ?? [];
+                    final totalCount = glossaries.length;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
@@ -266,16 +264,16 @@ class _DeckListScreenState extends State<DeckListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DeckDetailScreen(deck: deck),
+                              builder: (context) => GlossaryDetailScreen(subject: subject),
                             ),
-                          ).then((_) => _loadDecks());
+                          ).then((_) => _loadSubjects());
                         },
                         onLongPress: () {
                           showDialog(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              title: const Text('Hapus Deck?'),
-                              content: Text('Apakah Anda yakin ingin menghapus deck "${deck.title}" beserta semua kartunya?'),
+                              title: const Text('Hapus Subjek?'),
+                              content: Text('Apakah Anda yakin ingin menghapus subjek "${subject.title}" beserta semua isinya?'),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx),
@@ -284,7 +282,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(ctx);
-                                    _deleteDeck(deck.id!);
+                                    _deleteSubject(subject.id!);
                                   },
                                   child: const Text('Hapus', style: TextStyle(color: AppColors.danger)),
                                 ),
@@ -297,15 +295,15 @@ class _DeckListScreenState extends State<DeckListScreen> {
                             borderRadius: BorderRadius.circular(20),
                             gradient: LinearGradient(
                               colors: [
-                                Color(deck.color),
-                                Color(deck.color).withValues(alpha: 0.7),
+                                Color(subject.color),
+                                Color(subject.color).withValues(alpha: 0.7),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Color(deck.color).withValues(alpha: 0.35),
+                                color: Color(subject.color).withValues(alpha: 0.35),
                                 blurRadius: 16,
                                 offset: const Offset(0, 8),
                               ),
@@ -333,7 +331,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        deck.title,
+                                        subject.title,
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -348,7 +346,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        '$totalCount kartu',
+                                        '$totalCount istilah',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -358,10 +356,10 @@ class _DeckListScreenState extends State<DeckListScreen> {
                                     ),
                                   ],
                                 ),
-                                if (deck.description.isNotEmpty) ...[
+                                if (subject.description.isNotEmpty) ...[
                                   const SizedBox(height: 10),
                                   Text(
-                                    deck.description,
+                                    subject.description,
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.white.withValues(alpha: 0.85),
@@ -370,32 +368,6 @@ class _DeckListScreenState extends State<DeckListScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
-                                const SizedBox(height: 16),
-                                // Progress bar
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: LinearProgressIndicator(
-                                          value: progress,
-                                          minHeight: 6,
-                                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      '$learnedCount/$totalCount',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white.withValues(alpha: 0.9),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
                           ),
@@ -405,7 +377,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                   },
                 ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDeckSheet,
+        onPressed: _showAddSubjectSheet,
         child: const Icon(Icons.add_rounded),
       ),
     );

@@ -14,7 +14,7 @@ import '../notes/notes_screen.dart';
 import '../habit/habit_screen.dart';
 import '../target/target_screen.dart';
 import '../study_session/session_screen.dart';
-import '../flashcard/deck_list_screen.dart';
+import '../glossary/glossary_subject_screen.dart';
 import '../pomodoro/pomodoro_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
@@ -551,10 +551,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SessionScreen())),
               ),
               _buildMoreGridItem(
-                title: 'Flashcards',
-                icon: Icons.view_carousel_rounded,
+                title: 'Glossary',
+                icon: Icons.book_rounded,
                 color: AppColors.warning,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DeckListScreen())),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GlossarySubjectScreen())),
               ),
               _buildMoreGridItem(
                 title: 'Pomodoro',

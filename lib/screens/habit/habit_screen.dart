@@ -16,6 +16,7 @@ class HabitScreen extends StatefulWidget {
 
 class _HabitScreenState extends State<HabitScreen> {
   List<HabitModel> _habits = [];
+  Map<int, List<HabitLogModel>> _habitLogs = {};
   bool _isLoading = true;
 
   @override
@@ -28,34 +29,68 @@ class _HabitScreenState extends State<HabitScreen> {
     setState(() => _isLoading = true);
     try {
       final habits = await DbHelper.getAllHabits();
-      setState(() {
-        _habits = habits;
-        _isLoading = false;
-      });
+      Map<int, List<HabitLogModel>> logs = {};
+      for (var h in habits) {
+        logs[h.id!] = await DbHelper.getHabitLogsForHabit(h.id!);
+      }
+      if (mounted) {
+        setState(() {
+          _habits = habits;
+          _habitLogs = logs;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _toggleHabitComplete(HabitModel habit) async {
-    HabitModel updatedHabit;
-    if (habit.isCompletedToday) {
-      // Toggle off: decrement streak and reset lastCompleted
-      final newStreak = habit.streak > 0 ? habit.streak - 1 : 0;
-      updatedHabit = habit.copyWith(
-        streak: newStreak,
-        lastCompleted: null, // Clear completion
-      );
-    } else {
-      // Toggle on: increment streak and set lastCompleted to today
-      final now = DateTime.now();
-      updatedHabit = habit.copyWith(
-        streak: habit.streak + 1,
-        lastCompleted: now,
-      );
-    }
+  bool _isCompletedToday(int habitId) {
+    final logs = _habitLogs[habitId] ?? [];
+    final now = DateTime.now();
+    return logs.any((log) => 
+      log.dateCompleted.year == now.year &&
+      log.dateCompleted.month == now.month &&
+      log.dateCompleted.day == now.day
+    );
+  }
 
-    await DbHelper.updateHabit(updatedHabit);
+  int _calculateStreak(int habitId) {
+    final logs = _habitLogs[habitId] ?? [];
+    if (logs.isEmpty) return 0;
+    
+    final sortedLogs = List<HabitLogModel>.from(logs)
+      ..sort((a, b) => b.dateCompleted.compareTo(a.dateCompleted));
+    
+    int streak = 0;
+    DateTime checkDate = DateTime.now();
+    bool foundToday = false;
+    
+    if (_isCompletedToday(habitId)) {
+      foundToday = true;
+      streak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+    
+    for (var i = foundToday ? 1 : 0; i < sortedLogs.length; i++) {
+        final logDate = sortedLogs[i].dateCompleted;
+        if (logDate.year == checkDate.year && logDate.month == checkDate.month && logDate.day == checkDate.day) {
+            streak++;
+            checkDate = checkDate.subtract(const Duration(days: 1));
+        } else if (logDate.isBefore(DateTime(checkDate.year, checkDate.month, checkDate.day))) {
+            break;
+        }
+    }
+    return streak;
+  }
+
+  Future<void> _toggleHabitComplete(HabitModel habit) async {
+    final isDone = _isCompletedToday(habit.id!);
+    if (isDone) {
+      await DbHelper.deleteHabitLogToday(habit.id!);
+    } else {
+      await DbHelper.insertHabitLog(HabitLogModel(habitId: habit.id!, dateCompleted: DateTime.now()));
+    }
     _loadHabits();
   }
 
@@ -153,6 +188,8 @@ class _HabitScreenState extends State<HabitScreen> {
                         ),
                         child: HabitCard(
                           habit: habit,
+                          isCompletedToday: _isCompletedToday(habit.id!),
+                          currentStreak: _calculateStreak(habit.id!),
                           onCompleteToggle: () => _toggleHabitComplete(habit),
                           onTap: () {
                             Navigator.push(

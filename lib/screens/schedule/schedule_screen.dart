@@ -5,8 +5,11 @@ import '../../database/db_helper.dart';
 import '../../models/schedule_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/schedule_card.dart';
+import '../../models/task_model.dart';
+import '../../widgets/task_card.dart';
 import 'add_schedule_screen.dart';
 import 'edit_schedule_screen.dart';
+import '../task/edit_task_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -19,6 +22,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   List<ScheduleModel> _schedules = [];
+  List<TaskModel> _tasks = [];
   bool _isLoading = true;
 
   @override
@@ -31,8 +35,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() => _isLoading = true);
     try {
       final schedules = await DbHelper.getAllSchedules();
+      final tasks = await DbHelper.getAllTasks();
       setState(() {
         _schedules = schedules;
+        _tasks = tasks;
         _isLoading = false;
       });
     } catch (e) {
@@ -48,12 +54,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }).toList();
   }
 
+  List<TaskModel> get _selectedDayTasks {
+    return _tasks.where((t) {
+      return t.dueDate.year == _selectedDay.year &&
+          t.dueDate.month == _selectedDay.month &&
+          t.dueDate.day == _selectedDay.day;
+    }).toList();
+  }
+
   Future<void> _deleteSchedule(int id) async {
     await DbHelper.deleteSchedule(id);
     _loadSchedules();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Jadwal berhasil dihapus')),
+      );
+    }
+  }
+
+  Future<void> _toggleTaskStatus(TaskModel task) async {
+    final updatedTask = task.copyWith(isCompleted: !task.isCompleted);
+    await DbHelper.updateTask(updatedTask);
+    _loadSchedules();
+  }
+
+  Future<void> _deleteTask(int id) async {
+    await DbHelper.deleteTask(id);
+    _loadSchedules();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tugas berhasil dihapus')),
       );
     }
   }
@@ -136,7 +166,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _selectedDaySchedules.isEmpty
+                : (_selectedDaySchedules.isEmpty && _selectedDayTasks.isEmpty)
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -148,7 +178,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Tidak ada kegiatan kuliah',
+                              'Tidak ada agenda hari ini',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -159,61 +189,119 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: _selectedDaySchedules.length,
+                        itemCount: _selectedDaySchedules.length + _selectedDayTasks.length,
                         itemBuilder: (context, index) {
-                          final schedule = _selectedDaySchedules[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Slidable(
-                              key: ValueKey(schedule.id),
-                              endActionPane: ActionPane(
-                                motion: const DrawerMotion(),
-                                extentRatio: 0.5,
-                                children: [
-                                  SlidableAction(
-                                    onPressed: (context) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => EditScheduleScreen(schedule: schedule),
-                                        ),
-                                      ).then((_) => _loadSchedules());
-                                    },
-                                    backgroundColor: AppColors.info,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.edit_rounded,
-                                    label: 'Edit',
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      bottomLeft: Radius.circular(16),
+                          if (index < _selectedDaySchedules.length) {
+                            final schedule = _selectedDaySchedules[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Slidable(
+                                key: ValueKey('schedule_${schedule.id}'),
+                                endActionPane: ActionPane(
+                                  motion: const DrawerMotion(),
+                                  extentRatio: 0.5,
+                                  children: [
+                                    SlidableAction(
+                                      onPressed: (context) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => EditScheduleScreen(schedule: schedule),
+                                          ),
+                                        ).then((_) => _loadSchedules());
+                                      },
+                                      backgroundColor: AppColors.info,
+                                      foregroundColor: Colors.white,
+                                      icon: Icons.edit_rounded,
+                                      label: 'Edit',
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(16),
+                                        bottomLeft: Radius.circular(16),
+                                      ),
                                     ),
-                                  ),
-                                  SlidableAction(
-                                    onPressed: (context) => _deleteSchedule(schedule.id!),
-                                    backgroundColor: AppColors.danger,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.delete_rounded,
-                                    label: 'Hapus',
-                                    borderRadius: const BorderRadius.only(
-                                      topRight: Radius.circular(16),
-                                      bottomRight: Radius.circular(16),
+                                    SlidableAction(
+                                      onPressed: (context) => _deleteSchedule(schedule.id!),
+                                      backgroundColor: AppColors.danger,
+                                      foregroundColor: Colors.white,
+                                      icon: Icons.delete_rounded,
+                                      label: 'Hapus',
+                                      borderRadius: const BorderRadius.only(
+                                        topRight: Radius.circular(16),
+                                        bottomRight: Radius.circular(16),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: ScheduleCard(
+                                  schedule: schedule,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => EditScheduleScreen(schedule: schedule),
+                                      ),
+                                    ).then((_) => _loadSchedules());
+                                  },
+                                ),
                               ),
-                              child: ScheduleCard(
-                                schedule: schedule,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditScheduleScreen(schedule: schedule),
+                            );
+                          } else {
+                            final taskIndex = index - _selectedDaySchedules.length;
+                            final task = _selectedDayTasks[taskIndex];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Slidable(
+                                key: ValueKey('task_${task.id}'),
+                                endActionPane: ActionPane(
+                                  motion: const DrawerMotion(),
+                                  extentRatio: 0.5,
+                                  children: [
+                                    SlidableAction(
+                                      onPressed: (context) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => EditTaskScreen(task: task),
+                                          ),
+                                        ).then((_) => _loadSchedules());
+                                      },
+                                      backgroundColor: AppColors.info,
+                                      foregroundColor: Colors.white,
+                                      icon: Icons.edit_rounded,
+                                      label: 'Edit',
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(16),
+                                        bottomLeft: Radius.circular(16),
+                                      ),
                                     ),
-                                  ).then((_) => _loadSchedules());
-                                },
+                                    SlidableAction(
+                                      onPressed: (context) => _deleteTask(task.id!),
+                                      backgroundColor: AppColors.danger,
+                                      foregroundColor: Colors.white,
+                                      icon: Icons.delete_rounded,
+                                      label: 'Hapus',
+                                      borderRadius: const BorderRadius.only(
+                                        topRight: Radius.circular(16),
+                                        bottomRight: Radius.circular(16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                child: TaskCard(
+                                  task: task,
+                                  onStatusChanged: (val) => _toggleTaskStatus(task),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => EditTaskScreen(task: task),
+                                      ),
+                                    ).then((_) => _loadSchedules());
+                                  },
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                       ),
           ),
