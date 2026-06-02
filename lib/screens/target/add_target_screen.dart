@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/target_model.dart';
+import '../../utils/app_text.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
@@ -35,7 +36,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
       await DbHelper.insertTarget(target);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Target berhasil disimpan')),
+          SnackBar(content: Text(AppText.get('targetSaved'))),
         );
         Navigator.pop(context);
       }
@@ -57,7 +58,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Target'),
+        title: Text(AppText.get('addTarget')),
       ),
       body: Form(
         key: _formKey,
@@ -66,8 +67,8 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
           children: [
             CustomTextField(
               controller: _courseController,
-              labelText: 'Mata Kuliah',
-              hintText: 'Struktur Data / Kalkulus...',
+              labelText: AppText.get('courseName'),
+              hintText: AppText.get('courseHint'),
               prefixIcon: Icons.book_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Mata Kuliah'),
             ),
@@ -77,7 +78,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
             DropdownButtonFormField<String>(
               value: _selectedGrade,
               decoration: InputDecoration(
-                labelText: 'Target Indeks Huruf',
+                labelText: AppText.get('targetGrade'),
                 prefixIcon: const Icon(Icons.grade_rounded),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -108,7 +109,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _currentScoreController,
-                    labelText: 'Nilai Sekarang',
+                    labelText: AppText.get('currentScoreInput'),
                     hintText: '0-100',
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     prefixIcon: Icons.percent_rounded,
@@ -119,7 +120,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _targetScoreController,
-                    labelText: 'Target Nilai Angka',
+                    labelText: AppText.get('targetScoreInput'),
                     hintText: '0-100',
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     prefixIcon: Icons.ads_click_rounded,
@@ -131,15 +132,15 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
             const SizedBox(height: 20),
             CustomTextField(
               controller: _notesController,
-              labelText: 'Catatan Tambahan',
-              hintText: 'Tugas harian minimal 80, UAS minimal 85...',
+              labelText: AppText.get('additionalNotes'),
+              hintText: AppText.get('targetNotesHint'),
               prefixIcon: Icons.edit_note_rounded,
               maxLines: 3,
             ),
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Sasaran',
+              text: AppText.get('saveTarget'),
               onTap: _saveTarget,
               icon: Icons.save_rounded,
             ),

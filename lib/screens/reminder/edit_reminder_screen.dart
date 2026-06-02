@@ -119,7 +119,7 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
             CustomTextField(
               controller: _titleController,
               labelText: 'Nama Pengingat',
-              hintText: 'Belajar kalkulus / Review materi...',
+              hintText: 'Belajar kalkulus / Notes...',
               prefixIcon: Icons.title_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Nama Pengingat'),
             ),

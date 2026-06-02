@@ -18,11 +18,15 @@ import '../models/flashcard_model.dart';
 class DbHelper {
   static Database? _database;
   static const String dbName = 'studysync.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
+  // bumped to 3 to add scheduleId in tasks
+  static const int _targetDbVersion = 3;
 
   static Future<Database> get database async {
     if (kIsWeb) {
-      throw UnsupportedError('Database is not supported on web. Use SharedPreferences fallback instead.');
+      throw UnsupportedError(
+        'Database is not supported on web. Use SharedPreferences fallback instead.',
+      );
     }
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -35,9 +39,24 @@ class DbHelper {
 
     return await openDatabase(
       pathString,
-      version: dbVersion,
+      version: _targetDbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE study_sessions ADD COLUMN taskId INTEGER');
+    }
+    if (oldVersion < 3) {
+      // Add optional schedule link on tasks
+      await db.execute('ALTER TABLE tasks ADD COLUMN scheduleId INTEGER');
+    }
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -50,7 +69,8 @@ class DbHelper {
         dueDate TEXT NOT NULL,
         isCompleted INTEGER NOT NULL DEFAULT 0,
         priority TEXT NOT NULL,
-        category TEXT NOT NULL
+        category TEXT NOT NULL,
+        scheduleId INTEGER
       )
     ''');
 
@@ -107,6 +127,7 @@ class DbHelper {
     await db.execute('''
       CREATE TABLE study_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        taskId INTEGER,
         subject TEXT NOT NULL,
         date TEXT NOT NULL,
         durationSeconds INTEGER NOT NULL,
@@ -170,7 +191,10 @@ class DbHelper {
     }
   }
 
-  static Future<void> _saveWebData(String key, List<Map<String, dynamic>> data) async {
+  static Future<void> _saveWebData(
+    String key,
+    List<Map<String, dynamic>> data,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, json.encode(data));
   }
@@ -185,242 +209,290 @@ class DbHelper {
     final monday = today.subtract(Duration(days: today.weekday - 1));
 
     // Seed Tasks
-    await insertTask(TaskModel(
-      title: 'Tugas Pemrograman Mobile',
-      description: 'Membuat rancangan UI aplikasi Flutter dengan Material 3.',
-      dueDate: today.add(const Duration(days: 2)),
-      isCompleted: false,
-      priority: 'High',
-      category: 'Tugas',
-    ));
-    await insertTask(TaskModel(
-      title: 'Projek Akhir Basis Data',
-      description: 'Normalisasi database dan merancang skema ERD untuk sistem informasi kampus.',
-      dueDate: today.add(const Duration(days: 5)),
-      isCompleted: false,
-      priority: 'High',
-      category: 'Projek',
-    ));
-    await insertTask(TaskModel(
-      title: 'Kuis Statistika',
-      description: 'Materi distribusi probabilitas binomial dan normal.',
-      dueDate: today.add(const Duration(days: 1)),
-      isCompleted: false,
-      priority: 'Medium',
-      category: 'Ujian',
-    ));
-    await insertTask(TaskModel(
-      title: 'Review Jurnal AI',
-      description: 'Membaca dan merangkum jurnal kecerdasan buatan tentang transformer models.',
-      dueDate: today.subtract(const Duration(days: 1)),
-      isCompleted: true,
-      priority: 'Low',
-      category: 'Tugas',
-    ));
-    await insertTask(TaskModel(
-      title: 'Laporan Praktikum Jaringan',
-      description: 'Konfigurasi subnetting dan routing statis di Cisco Packet Tracer.',
-      dueDate: today.subtract(const Duration(days: 3)),
-      isCompleted: true,
-      priority: 'Medium',
-      category: 'Tugas',
-    ));
+    await insertTask(
+      TaskModel(
+        title: 'Tugas Pemrograman Mobile',
+        description: 'Membuat rancangan UI aplikasi Flutter dengan Material 3.',
+        dueDate: today.add(const Duration(days: 2)),
+        isCompleted: false,
+        priority: 'High',
+        category: 'Tugas',
+      ),
+    );
+    await insertTask(
+      TaskModel(
+        title: 'Projek Akhir Basis Data',
+        description:
+            'Normalisasi database dan merancang skema ERD untuk sistem informasi kampus.',
+        dueDate: today.add(const Duration(days: 5)),
+        isCompleted: false,
+        priority: 'High',
+        category: 'Projek',
+      ),
+    );
+    await insertTask(
+      TaskModel(
+        title: 'Kuis Statistika',
+        description: 'Materi distribusi probabilitas binomial dan normal.',
+        dueDate: today.add(const Duration(days: 1)),
+        isCompleted: false,
+        priority: 'Medium',
+        category: 'Ujian',
+      ),
+    );
+    await insertTask(
+      TaskModel(
+        title: 'Review Jurnal AI',
+        description:
+            'Membaca dan merangkum jurnal kecerdasan buatan tentang transformer models.',
+        dueDate: today.subtract(const Duration(days: 1)),
+        isCompleted: true,
+        priority: 'Low',
+        category: 'Tugas',
+      ),
+    );
+    await insertTask(
+      TaskModel(
+        title: 'Laporan Praktikum Jaringan',
+        description:
+            'Konfigurasi subnetting dan routing statis di Cisco Packet Tracer.',
+        dueDate: today.subtract(const Duration(days: 3)),
+        isCompleted: true,
+        priority: 'Medium',
+        category: 'Tugas',
+      ),
+    );
 
     // Seed Schedules
-    await insertSchedule(ScheduleModel(
-      title: 'Pemrograman Mobile',
-      location: 'Lab Komputer 3',
-      date: monday,
-      startTime: '08:00',
-      endTime: '10:30',
-      color: 0xFF6366F1, // Indigo
-      lecturer: 'Dr. Eng. Farid',
-    ));
-    await insertSchedule(ScheduleModel(
-      title: 'Jaringan Komputer',
-      location: 'Ruang Kuliah 302',
-      date: monday.add(const Duration(days: 1)),
-      startTime: '10:45',
-      endTime: '13:15',
-      color: 0xFF10B981, // Emerald
-      lecturer: 'Ahmad Dahlan, M.T.',
-    ));
-    await insertSchedule(ScheduleModel(
-      title: 'Basis Data Lanjut',
-      location: 'Ruang Kuliah 204',
-      date: monday.add(const Duration(days: 2)),
-      startTime: '13:30',
-      endTime: '16:00',
-      color: 0xFFF59E0B, // Amber
-      lecturer: 'Siti Aminah, M.Kom.',
-    ));
-    await insertSchedule(ScheduleModel(
-      title: 'Kecerdasan Buatan',
-      location: 'Ruang Kuliah 301',
-      date: monday.add(const Duration(days: 3)),
-      startTime: '08:00',
-      endTime: '10:30',
-      color: 0xFFEC4899, // Pink
-      lecturer: 'Prof. Hermawan',
-    ));
+    await insertSchedule(
+      ScheduleModel(
+        title: 'Pemrograman Mobile',
+        location: 'Lab Komputer 3',
+        date: monday,
+        startTime: '08:00',
+        endTime: '10:30',
+        color: 0xFF6366F1, // Indigo
+        lecturer: 'Dr. Eng. Farid',
+      ),
+    );
+    await insertSchedule(
+      ScheduleModel(
+        title: 'Jaringan Komputer',
+        location: 'Ruang Kuliah 302',
+        date: monday.add(const Duration(days: 1)),
+        startTime: '10:45',
+        endTime: '13:15',
+        color: 0xFF10B981, // Emerald
+        lecturer: 'Ahmad Dahlan, M.T.',
+      ),
+    );
+    await insertSchedule(
+      ScheduleModel(
+        title: 'Basis Data Lanjut',
+        location: 'Ruang Kuliah 204',
+        date: monday.add(const Duration(days: 2)),
+        startTime: '13:30',
+        endTime: '16:00',
+        color: 0xFFF59E0B, // Amber
+        lecturer: 'Siti Aminah, M.Kom.',
+      ),
+    );
+    await insertSchedule(
+      ScheduleModel(
+        title: 'Kecerdasan Buatan',
+        location: 'Ruang Kuliah 301',
+        date: monday.add(const Duration(days: 3)),
+        startTime: '08:00',
+        endTime: '10:30',
+        color: 0xFFEC4899, // Pink
+        lecturer: 'Prof. Hermawan',
+      ),
+    );
 
     // Seed Notes
-    await insertNote(NoteModel(
-      title: 'Rumus Kalkulus II',
-      content: '1. Integral Lipat Dua: digunakan untuk menghitung volume di bawah permukaan z = f(x,y).\n2. Teorema Green: menghubungkan integral garis di sepanjang kurva tertutup C dengan integral lipat dua di atas daerah R.',
-      createdAt: today,
-      color: 0xFFFFEDD5, // Pastel Amber
-      isPinned: true,
-    ));
-    await insertNote(NoteModel(
-      title: 'Ide Judul PKM 2026',
-      content: '1. Sistem IoT Smart Agriculture berbasis nodemcu untuk optimalisasi penyiraman tanaman.\n2. Aplikasi StudySync untuk meningkatkan efektivitas belajar kelompok mahasiswa.',
-      createdAt: today.subtract(const Duration(days: 1)),
-      color: 0xFFE0F2FE, // Pastel Blue
-      isPinned: true,
-    ));
-    await insertNote(NoteModel(
-      title: 'Daftar Referensi Buku Flutter',
-      content: '1. Flutter in Action oleh Eric Windmill.\n2. Cookbooks Flutter resmi di flutter.dev.\n3. Kursus praktis di YouTube Flutter Indonesia.',
-      createdAt: today.subtract(const Duration(days: 3)),
-      color: 0xFFF3E8FF, // Pastel Purple
-      isPinned: false,
-    ));
-
-    // Seed Habits
-    await insertHabit(HabitModel(
-      name: 'Membaca Buku 15 Menit',
-      frequency: 'Daily',
-      streak: 5,
-      lastCompleted: today.subtract(const Duration(days: 1)),
-    ));
-    await insertHabit(HabitModel(
-      name: 'Belajar Coding 1 Jam',
-      frequency: 'Daily',
-      streak: 12,
-      lastCompleted: today,
-    ));
-    await insertHabit(HabitModel(
-      name: 'Minum Air Putih 2L',
-      frequency: 'Daily',
-      streak: 8,
-      lastCompleted: today,
-    ));
+    await insertNote(
+      NoteModel(
+        title: 'Rumus Kalkulus II',
+        content:
+            '1. Integral Lipat Dua: digunakan untuk menghitung volume di bawah permukaan z = f(x,y).\n2. Teorema Green: menghubungkan integral garis di sepanjang kurva tertutup C dengan integral lipat dua di atas daerah R.',
+        createdAt: today,
+        color: 0xFFFFEDD5, // Pastel Amber
+        isPinned: true,
+      ),
+    );
+    await insertNote(
+      NoteModel(
+        title: 'Ide Judul PKM 2026',
+        content:
+            '1. Sistem IoT Smart Agriculture berbasis nodemcu untuk optimalisasi penyiraman tanaman.\n2. Aplikasi StudySync untuk meningkatkan efektivitas belajar kelompok mahasiswa.',
+        createdAt: today.subtract(const Duration(days: 1)),
+        color: 0xFFE0F2FE, // Pastel Blue
+        isPinned: true,
+      ),
+    );
+    await insertNote(
+      NoteModel(
+        title: 'Daftar Referensi Buku Flutter',
+        content:
+            '1. Flutter in Action oleh Eric Windmill.\n2. Cookbooks Flutter resmi di flutter.dev.\n3. Kursus praktis di YouTube Flutter Indonesia.',
+        createdAt: today.subtract(const Duration(days: 3)),
+        color: 0xFFF3E8FF, // Pastel Purple
+        isPinned: false,
+      ),
+    );
 
     // Seed Targets
-    await insertTarget(TargetModel(
-      courseName: 'Pemrograman Mobile',
-      targetGrade: 'A',
-      targetScore: 90.0,
-      currentScore: 87.0,
-      notes: 'Pertahankan nilai praktikum mingguan dan kuis.',
-    ));
-    await insertTarget(TargetModel(
-      courseName: 'Kecerdasan Buatan',
-      targetGrade: 'A',
-      targetScore: 88.0,
-      currentScore: 82.0,
-      notes: 'Belajar lebih keras untuk UTS materi Neural Networks.',
-    ));
-    await insertTarget(TargetModel(
-      courseName: 'Jaringan Komputer',
-      targetGrade: 'B',
-      targetScore: 80.0,
-      currentScore: 78.0,
-      notes: 'Latihan routing statis dan dinamis secara rutin.',
-    ));
+    await insertTarget(
+      TargetModel(
+        courseName: 'Pemrograman Mobile',
+        targetGrade: 'A',
+        targetScore: 90.0,
+        currentScore: 87.0,
+        notes: 'Pertahankan nilai praktikum mingguan dan kuis.',
+      ),
+    );
+    await insertTarget(
+      TargetModel(
+        courseName: 'Kecerdasan Buatan',
+        targetGrade: 'A',
+        targetScore: 88.0,
+        currentScore: 82.0,
+        notes: 'Belajar lebih keras untuk UTS materi Neural Networks.',
+      ),
+    );
+    await insertTarget(
+      TargetModel(
+        courseName: 'Jaringan Komputer',
+        targetGrade: 'B',
+        targetScore: 80.0,
+        currentScore: 78.0,
+        notes: 'Latihan routing statis dan dinamis secara rutin.',
+      ),
+    );
 
     // Seed Study Sessions
-    await insertStudySession(StudySessionModel(
-      subject: 'Pemrograman Mobile',
-      date: today.subtract(const Duration(days: 2)),
-      durationSeconds: 2700, // 45 min
-      notes: 'Mempelajari State Management Flutter (ValueNotifier & Provider).',
-    ));
-    await insertStudySession(StudySessionModel(
-      subject: 'Kecerdasan Buatan',
-      date: today.subtract(const Duration(days: 1)),
-      durationSeconds: 3600, // 60 min
-      notes: 'Mempelajari cara kerja algoritma A* Search.',
-    ));
-    await insertStudySession(StudySessionModel(
-      subject: 'Basis Data Lanjut',
-      date: today,
-      durationSeconds: 1800, // 30 min
-      notes: 'Latihan membuat query JOIN yang kompleks.',
-    ));
+    await insertStudySession(
+      StudySessionModel(
+        subject: 'Pemrograman Mobile',
+        date: today.subtract(const Duration(days: 2)),
+        durationSeconds: 2700, // 45 min
+        notes:
+            'Mempelajari State Management Flutter (ValueNotifier & Provider).',
+      ),
+    );
+    await insertStudySession(
+      StudySessionModel(
+        subject: 'Kecerdasan Buatan',
+        date: today.subtract(const Duration(days: 1)),
+        durationSeconds: 3600, // 60 min
+        notes: 'Mempelajari cara kerja algoritma A* Search.',
+      ),
+    );
+    await insertStudySession(
+      StudySessionModel(
+        subject: 'Basis Data Lanjut',
+        date: today,
+        durationSeconds: 1800, // 30 min
+        notes: 'Latihan membuat query JOIN yang kompleks.',
+      ),
+    );
 
     // Seed Reminders
-    await insertReminder(ReminderModel(
-      title: 'Kuis Statistika Besok Pagi',
-      dateTime: today.add(const Duration(days: 1, hours: 7)),
-      repeatType: 'None',
-      isCompleted: false,
-    ));
-    await insertReminder(ReminderModel(
-      title: 'Kumpul Tugas Jaringan',
-      dateTime: today.add(const Duration(hours: 23, minutes: 59)),
-      repeatType: 'None',
-      isCompleted: false,
-    ));
+    await insertReminder(
+      ReminderModel(
+        title: 'Kuis Statistika Besok Pagi',
+        dateTime: today.add(const Duration(days: 1, hours: 7)),
+        repeatType: 'None',
+        isCompleted: false,
+      ),
+    );
+    await insertReminder(
+      ReminderModel(
+        title: 'Kumpul Tugas Jaringan',
+        dateTime: today.add(const Duration(hours: 23, minutes: 59)),
+        repeatType: 'None',
+        isCompleted: false,
+      ),
+    );
 
     // Seed Pomodoro History
-    await insertPomodoroHistory(PomodoroModel(
-      durationMinutes: 25,
-      dateTime: today.subtract(const Duration(days: 1)),
-      category: 'Belajar',
-    ));
-    await insertPomodoroHistory(PomodoroModel(
-      durationMinutes: 25,
-      dateTime: today,
-      category: 'Tugas',
-    ));
+    await insertPomodoroHistory(
+      PomodoroModel(
+        durationMinutes: 25,
+        dateTime: today.subtract(const Duration(days: 1)),
+        category: 'Belajar',
+      ),
+    );
+    await insertPomodoroHistory(
+      PomodoroModel(durationMinutes: 25, dateTime: today, category: 'Tugas'),
+    );
 
     // Seed Flashcards Decks
-    final deck1Id = await insertDeck(DeckModel(
-      title: 'Pemrograman Mobile',
-      description: 'Materi dasar Flutter, State Management, Widget, dan Lifecycle.',
-      color: 0xFF6366F1, // Indigo
-    ));
-    final deck2Id = await insertDeck(DeckModel(
-      title: 'Kecerdasan Buatan (AI)',
-      description: 'Pengenalan Machine Learning, Neural Networks, dan Search Algorithms.',
-      color: 0xFFEC4899, // Pink
-    ));
+    final deck1Id = await insertDeck(
+      DeckModel(
+        title: 'Pemrograman Mobile',
+        description:
+            'Materi dasar Flutter, State Management, Widget, dan Lifecycle.',
+        color: 0xFF6366F1, // Indigo
+      ),
+    );
+    final deck2Id = await insertDeck(
+      DeckModel(
+        title: 'Kecerdasan Buatan (AI)',
+        description:
+            'Pengenalan Machine Learning, Neural Networks, dan Search Algorithms.',
+        color: 0xFFEC4899, // Pink
+      ),
+    );
 
     // Seed Flashcards inside Deck 1
-    await insertFlashcard(FlashcardModel(
-      deckId: deck1Id,
-      question: 'Apa itu Flutter?',
-      answer: 'Framework UI open-source buatan Google untuk membangun aplikasi multiplatform berkualitas tinggi dari satu codebase tunggal.',
-      isLearned: true,
-    ));
-    await insertFlashcard(FlashcardModel(
-      deckId: deck1Id,
-      question: 'Apa perbedaan utama StatelessWidget dan StatefulWidget?',
-      answer: 'StatelessWidget bersifat statis dan tidak dapat diubah setelah dirender, sedangkan StatefulWidget dapat menyimpan data dinamis (state) dan merender ulang dirinya sendiri saat state berubah.',
-      isLearned: false,
-    ));
-    await insertFlashcard(FlashcardModel(
-      deckId: deck1Id,
-      question: 'Sebutkan 3 jenis State Management yang populer di Flutter!',
-      answer: '1. Provider (sangat ramah pemula)\n2. BLoC (cocok untuk skala enterprise)\n3. Riverpod (versi modern dari Provider).',
-      isLearned: false,
-    ));
+    await insertFlashcard(
+      FlashcardModel(
+        deckId: deck1Id,
+        question: 'Apa itu Flutter?',
+        answer:
+            'Framework UI open-source buatan Google untuk membangun aplikasi multiplatform berkualitas tinggi dari satu codebase tunggal.',
+        isLearned: true,
+      ),
+    );
+    await insertFlashcard(
+      FlashcardModel(
+        deckId: deck1Id,
+        question: 'Apa perbedaan utama StatelessWidget dan StatefulWidget?',
+        answer:
+            'StatelessWidget bersifat statis dan tidak dapat diubah setelah dirender, sedangkan StatefulWidget dapat menyimpan data dinamis (state) dan merender ulang dirinya sendiri saat state berubah.',
+        isLearned: false,
+      ),
+    );
+    await insertFlashcard(
+      FlashcardModel(
+        deckId: deck1Id,
+        question: 'Sebutkan 3 jenis State Management yang populer di Flutter!',
+        answer:
+            '1. Provider (sangat ramah pemula)\n2. BLoC (cocok untuk skala enterprise)\n3. Riverpod (versi modern dari Provider).',
+        isLearned: false,
+      ),
+    );
 
     // Seed Flashcards inside Deck 2
-    await insertFlashcard(FlashcardModel(
-      deckId: deck2Id,
-      question: 'Apa itu Kecerdasan Buatan (AI)?',
-      answer: 'Simulasi kecerdasan manusia yang diprogram ke dalam komputer agar mampu berpikir, belajar, memecahkan masalah, dan mengambil keputusan.',
-      isLearned: true,
-    ));
-    await insertFlashcard(FlashcardModel(
-      deckId: deck2Id,
-      question: 'Jelaskan perbedaan Machine Learning dan Deep Learning!',
-      answer: 'Machine Learning adalah algoritma yang belajar dari data untuk membuat prediksi. Deep Learning adalah subbidang Machine Learning yang terinspirasi oleh otak manusia dengan jaringan saraf tiruan berlapis (Deep Neural Networks).',
-      isLearned: false,
-    ));
+    await insertFlashcard(
+      FlashcardModel(
+        deckId: deck2Id,
+        question: 'Apa itu Kecerdasan Buatan (AI)?',
+        answer:
+            'Simulasi kecerdasan manusia yang diprogram ke dalam komputer agar mampu berpikir, belajar, memecahkan masalah, dan mengambil keputusan.',
+        isLearned: true,
+      ),
+    );
+    await insertFlashcard(
+      FlashcardModel(
+        deckId: deck2Id,
+        question: 'Jelaskan perbedaan Machine Learning dan Deep Learning!',
+        answer:
+            'Machine Learning adalah algoritma yang belajar dari data untuk membuat prediksi. Deep Learning adalah subbidang Machine Learning yang terinspirasi oleh otak manusia dengan jaringan saraf tiruan berlapis (Deep Neural Networks).',
+        isLearned: false,
+      ),
+    );
   }
 
   // --- DATABASE OPERATIONS ---
@@ -447,7 +519,10 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks', orderBy: 'dueDate ASC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tasks',
+      orderBy: 'dueDate ASC',
+    );
     return List.generate(maps.length, (i) => TaskModel.fromMap(maps[i]));
   }
 
@@ -483,11 +558,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
   // 2. SCHEDULES
@@ -512,7 +583,10 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('schedules', orderBy: 'startTime ASC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'schedules',
+      orderBy: 'startTime ASC',
+    );
     return List.generate(maps.length, (i) => ScheduleModel.fromMap(maps[i]));
   }
 
@@ -548,11 +622,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'schedules',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('schedules', where: 'id = ?', whereArgs: [id]);
   }
 
   // 3. NOTES
@@ -581,7 +651,10 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('notes', orderBy: 'isPinned DESC, createdAt DESC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'notes',
+      orderBy: 'isPinned DESC, createdAt DESC',
+    );
     return List.generate(maps.length, (i) => NoteModel.fromMap(maps[i]));
   }
 
@@ -617,11 +690,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'notes',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('notes', where: 'id = ?', whereArgs: [id]);
   }
 
   // 4. HABITS
@@ -646,6 +715,31 @@ class DbHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('habits');
     return List.generate(maps.length, (i) => HabitModel.fromMap(maps[i]));
+  }
+
+  static Future<void> deleteSeedHabits() async {
+    const seedHabitNames = [
+      'Membaca Buku 15 Menit',
+      'Belajar Coding 1 Jam',
+      'Minum Air Putih 2L',
+    ];
+
+    if (kIsWeb) {
+      final data = await _getWebData('web_habits');
+      final initialLength = data.length;
+      data.removeWhere((map) => seedHabitNames.contains(map['name']));
+      if (data.length != initialLength) {
+        await _saveWebData('web_habits', data);
+      }
+      return;
+    }
+
+    final db = await database;
+    await db.delete(
+      'habits',
+      where: 'name IN (${List.filled(seedHabitNames.length, '?').join(', ')})',
+      whereArgs: seedHabitNames,
+    );
   }
 
   static Future<int> updateHabit(HabitModel habit) async {
@@ -680,11 +774,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'habits',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('habits', where: 'id = ?', whereArgs: [id]);
   }
 
   // 5. TARGETS
@@ -743,11 +833,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'targets',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('targets', where: 'id = ?', whereArgs: [id]);
   }
 
   // 6. STUDY SESSIONS
@@ -772,8 +858,73 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('study_sessions', orderBy: 'date DESC');
-    return List.generate(maps.length, (i) => StudySessionModel.fromMap(maps[i]));
+    final List<Map<String, dynamic>> maps = await db.query(
+      'study_sessions',
+      orderBy: 'date DESC',
+    );
+    return List.generate(
+      maps.length,
+      (i) => StudySessionModel.fromMap(maps[i]),
+    );
+  }
+
+  static Future<List<StudySessionModel>> getStudySessionsByTaskId(
+    int taskId,
+  ) async {
+    if (kIsWeb) {
+      final data = await _getWebData('web_study_sessions');
+      final filtered = data.where((map) => map['taskId'] == taskId).toList();
+      final list = filtered
+          .map((map) => StudySessionModel.fromMap(map))
+          .toList();
+      list.sort((a, b) => b.date.compareTo(a.date));
+      return list;
+    }
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'study_sessions',
+      where: 'taskId = ?',
+      whereArgs: [taskId],
+      orderBy: 'date DESC',
+    );
+    return List.generate(
+      maps.length,
+      (i) => StudySessionModel.fromMap(maps[i]),
+    );
+  }
+
+  static Future<TaskModel?> getTaskById(int id) async {
+    if (kIsWeb) {
+      final data = await _getWebData('web_tasks');
+      final map = data.firstWhere((m) => m['id'] == id, orElse: () => {});
+      if (map.isEmpty) return null;
+      return TaskModel.fromMap(map);
+    }
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return TaskModel.fromMap(maps.first);
+  }
+
+  static Future<ScheduleModel?> getScheduleById(int id) async {
+    if (kIsWeb) {
+      final data = await _getWebData('web_schedules');
+      final map = data.firstWhere((m) => m['id'] == id, orElse: () => {});
+      if (map.isEmpty) return null;
+      return ScheduleModel.fromMap(map);
+    }
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'schedules',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    return ScheduleModel.fromMap(maps.first);
   }
 
   static Future<int> updateStudySession(StudySessionModel session) async {
@@ -808,11 +959,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'study_sessions',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('study_sessions', where: 'id = ?', whereArgs: [id]);
   }
 
   // 7. REMINDERS
@@ -837,7 +984,10 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('reminders', orderBy: 'dateTime ASC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'reminders',
+      orderBy: 'dateTime ASC',
+    );
     return List.generate(maps.length, (i) => ReminderModel.fromMap(maps[i]));
   }
 
@@ -873,11 +1023,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'reminders',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('reminders', where: 'id = ?', whereArgs: [id]);
   }
 
   // 8. POMODORO HISTORY
@@ -902,7 +1048,10 @@ class DbHelper {
       return list;
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('pomodoro_history', orderBy: 'dateTime DESC');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'pomodoro_history',
+      orderBy: 'dateTime DESC',
+    );
     return List.generate(maps.length, (i) => PomodoroModel.fromMap(maps[i]));
   }
 
@@ -986,11 +1135,7 @@ class DbHelper {
     }
     final db = await database;
     await db.delete('flashcards', where: 'deckId = ?', whereArgs: [id]);
-    return await db.delete(
-      'flashcard_decks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('flashcard_decks', where: 'id = ?', whereArgs: [id]);
   }
 
   // 10. FLASHCARDS
@@ -1054,10 +1199,6 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-    return await db.delete(
-      'flashcards',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('flashcards', where: 'id = ?', whereArgs: [id]);
   }
 }

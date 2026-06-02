@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/task_model.dart';
+import '../../models/schedule_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
@@ -25,6 +27,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late DateTime _selectedDate;
   late String _selectedPriority;
   late String _selectedCategory;
+  int? _selectedScheduleId;
+  List<ScheduleModel> _availableSchedules = [];
 
   final List<String> _priorities = ['Low', 'Medium', 'High'];
   final List<String> _categories = ['Tugas', 'Projek', 'Ujian', 'Lainnya'];
@@ -35,12 +39,21 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _titleController = TextEditingController(text: widget.task.title);
     _descController = TextEditingController(text: widget.task.description);
     _dateController = TextEditingController();
-    
+
     _selectedDate = widget.task.dueDate;
     _selectedPriority = widget.task.priority;
     _selectedCategory = widget.task.category;
+    _selectedScheduleId = widget.task.scheduleId;
 
     _dateController.text = DateHelper.formatShortDate(_selectedDate);
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    final schedules = await DbHelper.getAllSchedules();
+    setState(() {
+      _availableSchedules = schedules;
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -66,13 +79,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         dueDate: _selectedDate,
         priority: _selectedPriority,
         category: _selectedCategory,
+        scheduleId: _selectedScheduleId,
       );
 
       await DbHelper.updateTask(updatedTask);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tugas berhasil diperbarui')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppText.get('taskUpdated'))));
         Navigator.pop(context);
       }
     }
@@ -89,9 +103,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Task'),
-      ),
+      appBar: AppBar(title: Text(AppText.get('editTask'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -99,32 +111,69 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Judul Tugas',
-              hintText: 'Masukkan judul tugas...',
+              labelText: AppText.get('taskTitle'),
+              hintText: AppText.get('taskTitleHint'),
               prefixIcon: Icons.title_rounded,
-              validator: (value) => AppValidator.validateRequired(value, 'Judul'),
+              validator: (value) =>
+                  AppValidator.validateRequired(value, 'Judul'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _descController,
-              labelText: 'Deskripsi',
-              hintText: 'Masukkan rincian tugas (opsional)...',
+              labelText: AppText.get('description'),
+              hintText: AppText.get('taskDescHint'),
               prefixIcon: Icons.description_rounded,
               maxLines: 3,
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _dateController,
-              labelText: 'Tenggat Waktu',
+              labelText: AppText.get('dueDate'),
               prefixIcon: Icons.calendar_today_rounded,
               readOnly: true,
               onTap: () => _selectDate(context),
             ),
             const SizedBox(height: 24),
+            DropdownButtonFormField<int?>(
+              initialValue: _selectedScheduleId,
+              decoration: InputDecoration(
+                labelText: AppText.get('selectScheduleOptional'),
+                prefixIcon: const Icon(Icons.schedule_rounded),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
+                ),
+              ),
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(AppText.get('noScheduleLink')),
+                ),
+                ..._availableSchedules.map((schedule) {
+                  return DropdownMenuItem<int?>(
+                    value: schedule.id,
+                    child: Text(schedule.title),
+                  );
+                }),
+              ],
+              onChanged: (value) {
+                setState(() => _selectedScheduleId = value);
+              },
+            ),
+            const SizedBox(height: 24),
 
             // Priority Selection
-            const Text(
-              'Prioritas',
+            Text(
+              AppText.get('priority'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -157,8 +206,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             const SizedBox(height: 24),
 
             // Category Selection
-            const Text(
-              'Kategori',
+            Text(
+              AppText.get('category'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -187,7 +236,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Perubahan',
+              text: AppText.get('saveChanges'),
               onTap: _updateTask,
               icon: Icons.check_rounded,
             ),

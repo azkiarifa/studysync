@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_helper.dart';
+import '../screens/study_session/add_session_screen.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
@@ -130,6 +131,37 @@ class TaskCard extends StatelessWidget {
                             fontSize: 11,
                             color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                           ),
+                        ),
+                        if (task.scheduleId != null) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Terkait jadwal',
+                            style: TextStyle(fontSize: 11, color: AppColors.primary),
+                          ),
+                        ],
+                        const SizedBox(width: 8),
+                        // Start Study Session button
+                        IconButton(
+                          tooltip: 'Mulai Sesi Belajar',
+                          icon: const Icon(Icons.menu_book_rounded, size: 18),
+                          color: AppColors.primary,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddSessionScreen(
+                                  initialTaskId: task.id,
+                                  initialSubject: task.title,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     )

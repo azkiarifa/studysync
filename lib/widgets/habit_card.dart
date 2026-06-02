@@ -17,7 +17,7 @@ class HabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isCompleted = habit.isCompletedToday;
+    final isCompleted = habit.isCompletedForCurrentPeriod;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -38,10 +38,14 @@ class HabitCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isCompleted
                         ? AppColors.success.withValues(alpha: 0.15)
-                        : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                        : (isDark
+                              ? AppColors.darkBorder
+                              : AppColors.lightBorder),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isCompleted ? AppColors.success : Colors.transparent,
+                      color: isCompleted
+                          ? AppColors.success
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -49,7 +53,9 @@ class HabitCard extends StatelessWidget {
                     Icons.check_rounded,
                     color: isCompleted
                         ? AppColors.success
-                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                        : (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary),
                     size: 24,
                   ),
                 ),
@@ -65,10 +71,16 @@ class HabitCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                         color: isCompleted
-                            ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                            : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                            ? (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary)
+                            : (isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -76,7 +88,9 @@ class HabitCard extends StatelessWidget {
                       habit.frequency,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -84,7 +98,10 @@ class HabitCard extends StatelessWidget {
               ),
               // Streak Display
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),

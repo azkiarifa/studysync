@@ -73,7 +73,7 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Note'),
+        title: const Text('Edit Notes'),
         actions: [
           IconButton(
             icon: Icon(
@@ -93,16 +93,16 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Judul Catatan',
-              hintText: 'Masukkan judul catatan...',
+              labelText: 'Judul Review',
+              hintText: 'Masukkan judul review...',
               prefixIcon: Icons.title_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Judul'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _contentController,
-              labelText: 'Isi Catatan',
-              hintText: 'Tulis catatan Anda di sini...',
+              labelText: 'Isi Review',
+              hintText: 'Tulis notes di sini...',
               maxLines: 8,
               validator: (value) => AppValidator.validateRequired(value, 'Isi Catatan'),
             ),

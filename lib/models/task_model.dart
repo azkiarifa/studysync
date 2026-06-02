@@ -6,6 +6,7 @@ class TaskModel {
   final bool isCompleted;
   final String priority; // 'Low', 'Medium', 'High'
   final String category; // 'Tugas', 'Projek', 'Ujian', 'Lainnya'
+  final int? scheduleId;
 
   TaskModel({
     this.id,
@@ -15,6 +16,7 @@ class TaskModel {
     this.isCompleted = false,
     required this.priority,
     required this.category,
+    this.scheduleId,
   });
 
   TaskModel copyWith({
@@ -25,6 +27,7 @@ class TaskModel {
     bool? isCompleted,
     String? priority,
     String? category,
+    int? scheduleId,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -34,6 +37,7 @@ class TaskModel {
       isCompleted: isCompleted ?? this.isCompleted,
       priority: priority ?? this.priority,
       category: category ?? this.category,
+      scheduleId: scheduleId ?? this.scheduleId,
     );
   }
 
@@ -46,6 +50,7 @@ class TaskModel {
       'isCompleted': isCompleted ? 1 : 0,
       'priority': priority,
       'category': category,
+      'scheduleId': scheduleId,
     };
   }
 
@@ -58,6 +63,7 @@ class TaskModel {
       isCompleted: (map['isCompleted'] as int) == 1,
       priority: map['priority'] as String,
       category: map['category'] as String,
+      scheduleId: map['scheduleId'] as int?,
     );
   }
 }

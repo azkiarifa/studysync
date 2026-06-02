@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/sharedpref_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
@@ -14,7 +16,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-  
+
   String _selectedSemester = 'Semester 4';
   final List<String> _semesters = [
     'Semester 1',
@@ -27,14 +29,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Semester 8',
   ];
 
-  // List of pre-defined avatar images paths (mocking profile images)
   String _selectedAvatar = '';
-  final List<String> _avatars = [
-    'assets/images/avatar_1.png',
-    'assets/images/avatar_2.png',
-    'assets/images/avatar_3.png',
-    'assets/images/avatar_4.png',
-  ];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -51,12 +47,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await SharedPrefService.setProfileImage(_selectedAvatar);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil diperbarui')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppText.get('profileUpdated'))));
         Navigator.pop(context);
       }
     }
+  }
+
+  Future<void> _pickProfileImage() async {
+    final pickedImage = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 800,
+    );
+    if (pickedImage == null) return;
+
+    setState(() {
+      _selectedAvatar = pickedImage.path;
+    });
+  }
+
+  void _removeProfileImage() {
+    setState(() {
+      _selectedAvatar = '';
+    });
   }
 
   @override
@@ -70,9 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
+      appBar: AppBar(title: Text(AppText.get('profile'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -86,18 +99,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 60,
                     backgroundColor: AppColors.primary.withOpacity(0.15),
                     child: _selectedAvatar.isEmpty
-                        ? const Icon(Icons.person_rounded, size: 64, color: AppColors.primary)
-                        : const Icon(Icons.account_circle_rounded, size: 100, color: AppColors.secondary),
+                        ? const Icon(
+                            Icons.person_rounded,
+                            size: 64,
+                            color: AppColors.primary,
+                          )
+                        : const Icon(
+                            Icons.account_circle_rounded,
+                            size: 100,
+                            color: AppColors.secondary,
+                          ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: CustomButton(
+                    text: AppText.get('pickPhoto'),
+                    onTap: _pickProfileImage,
+                    icon: Icons.photo_library_rounded,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filledTonal(
+                  onPressed: _selectedAvatar.isEmpty
+                      ? null
+                      : _removeProfileImage,
+                  icon: const Icon(Icons.delete_rounded),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
 
             // Form inputs
             CustomTextField(
               controller: _usernameController,
-              labelText: 'Nama Pengguna',
+              labelText: AppText.get('username'),
               hintText: 'Arif...',
               prefixIcon: Icons.badge_rounded,
               validator: (value) {
@@ -113,24 +153,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             DropdownButtonFormField<String>(
               value: _selectedSemester,
               decoration: InputDecoration(
-                labelText: 'Semester Aktif',
+                labelText: AppText.get('activeSemester'),
                 prefixIcon: const Icon(Icons.school_rounded),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                     width: 1,
                   ),
                 ),
               ),
               items: _semesters.map((String sem) {
-                return DropdownMenuItem<String>(
-                  value: sem,
-                  child: Text(sem),
-                );
+                return DropdownMenuItem<String>(value: sem, child: Text(sem));
               }).toList(),
               onChanged: (String? newValue) {
                 if (newValue != null) {
@@ -141,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Profil',
+              text: AppText.get('saveProfile'),
               onTap: _saveProfile,
               icon: Icons.check_rounded,
             ),

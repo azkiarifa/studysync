@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../utils/app_text.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
   final int currentIndex;
@@ -14,15 +15,19 @@ class CustomBottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       height: 70,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard.withOpacity(0.9) : Colors.white.withOpacity(0.9),
+        color: isDark
+            ? AppColors.darkCard.withOpacity(0.9)
+            : Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder.withOpacity(0.5) : AppColors.lightBorder,
+          color: isDark
+              ? AppColors.darkBorder.withOpacity(0.5)
+              : AppColors.lightBorder,
           width: 1,
         ),
         boxShadow: [
@@ -30,7 +35,7 @@ class CustomBottomNavbar extends StatelessWidget {
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -40,19 +45,19 @@ class CustomBottomNavbar extends StatelessWidget {
             context,
             index: 0,
             icon: Icons.dashboard_rounded,
-            label: 'Dashboard',
+            label: AppText.get('dashboard'),
           ),
           _buildNavItem(
             context,
             index: 1,
             icon: Icons.calendar_month_rounded,
-            label: 'Planner',
+            label: AppText.get('planner'),
           ),
           _buildNavItem(
             context,
             index: 2,
             icon: Icons.more_horiz_rounded,
-            label: 'More',
+            label: AppText.get('more'),
           ),
         ],
       ),
@@ -67,7 +72,7 @@ class CustomBottomNavbar extends StatelessWidget {
   }) {
     final isSelected = currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -86,7 +91,9 @@ class CustomBottomNavbar extends StatelessWidget {
               icon,
               color: isSelected
                   ? AppColors.primary
-                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                  : (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary),
               size: 24,
             ),
             if (isSelected) ...[
@@ -99,7 +106,7 @@ class CustomBottomNavbar extends StatelessWidget {
                   fontSize: 14,
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),

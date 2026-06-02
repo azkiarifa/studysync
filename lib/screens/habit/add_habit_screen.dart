@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/habit_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
@@ -32,7 +33,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
       await DbHelper.insertHabit(habit);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Habit berhasil disimpan')),
+          SnackBar(content: Text(AppText.get('habitSaved'))),
         );
         Navigator.pop(context);
       }
@@ -49,7 +50,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Habit'),
+        title: Text(AppText.get('addHabit')),
       ),
       body: Form(
         key: _formKey,
@@ -58,16 +59,16 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
           children: [
             CustomTextField(
               controller: _nameController,
-              labelText: 'Nama Kebiasaan',
-              hintText: 'Membaca buku / Minum air / Olahraga...',
+              labelText: AppText.get('habitName'),
+              hintText: AppText.get('habitHint'),
               prefixIcon: Icons.repeat_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Nama Kebiasaan'),
             ),
             const SizedBox(height: 24),
             
             // Frequency Selection
-            const Text(
-              'Frekuensi',
+            Text(
+              AppText.get('frequency'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -96,7 +97,7 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Mulai Lacak Kebiasaan',
+              text: AppText.get('trackHabit'),
               onTap: _saveHabit,
               icon: Icons.save_rounded,
             ),

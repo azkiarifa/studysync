@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/note_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
@@ -17,7 +18,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  
+
   bool _isPinned = false;
   int _selectedColorValue = 0xFFFEE2E2; // Soft Rose default
 
@@ -45,9 +46,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
       await DbHelper.insertNote(note);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Catatan berhasil disimpan')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppText.get('noteSaved'))));
         Navigator.pop(context);
       }
     }
@@ -64,7 +65,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Note'),
+        title: Text(AppText.get('addNote')),
         actions: [
           IconButton(
             icon: Icon(
@@ -74,7 +75,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             onPressed: () {
               setState(() => _isPinned = !_isPinned);
             },
-          )
+          ),
         ],
       ),
       body: Form(
@@ -84,24 +85,26 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Judul Catatan',
-              hintText: 'Masukkan judul catatan...',
+              labelText: AppText.get('noteTitle'),
+              hintText: AppText.get('noteTitleHint'),
               prefixIcon: Icons.title_rounded,
-              validator: (value) => AppValidator.validateRequired(value, 'Judul'),
+              validator: (value) =>
+                  AppValidator.validateRequired(value, 'Judul'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _contentController,
-              labelText: 'Isi Catatan',
-              hintText: 'Tulis catatan Anda di sini...',
+              labelText: AppText.get('noteContent'),
+              hintText: AppText.get('noteContentHint'),
               maxLines: 8,
-              validator: (value) => AppValidator.validateRequired(value, 'Isi Catatan'),
+              validator: (value) =>
+                  AppValidator.validateRequired(value, 'Isi Catatan'),
             ),
             const SizedBox(height: 24),
 
             // Color Picker Label
-            const Text(
-              'Pilih Warna Catatan',
+            Text(
+              AppText.get('chooseNoteColor'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -125,7 +128,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         color: Color(colorVal),
                         shape: BoxShape.circle,
                         border: Border.all(
-                              color: isSelected ? AppColors.primary : Colors.black.withValues(alpha: 0.1),
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.black.withValues(alpha: 0.1),
                           width: isSelected ? 3 : 1,
                         ),
                       ),
@@ -144,7 +149,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Catatan',
+              text: AppText.get('saveNote'),
               onTap: _saveNote,
               icon: Icons.save_rounded,
             ),

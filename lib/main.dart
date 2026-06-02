@@ -24,7 +24,10 @@ void main() async {
 
 class StudySyncApp extends StatelessWidget {
   // Global theme switcher notifier
-  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
+  static final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(
+    ThemeMode.dark,
+  );
+  static final ValueNotifier<int> languageNotifier = ValueNotifier(0);
 
   const StudySyncApp({super.key});
 
@@ -33,13 +36,18 @@ class StudySyncApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
       builder: (_, ThemeMode currentMode, __) {
-        return MaterialApp(
-          title: 'StudySync',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: currentMode,
-          home: const SplashScreen(),
+        return ValueListenableBuilder<int>(
+          valueListenable: languageNotifier,
+          builder: (_, __, ___) {
+            return MaterialApp(
+              title: 'StudySync',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: currentMode,
+              home: const SplashScreen(),
+            );
+          },
         );
       },
     );

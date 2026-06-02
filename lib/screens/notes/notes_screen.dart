@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../database/db_helper.dart';
 import '../../models/note_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../widgets/note_card.dart';
 import 'add_note_screen.dart';
 import 'edit_note_screen.dart';
@@ -66,9 +67,9 @@ class _NotesScreenState extends State<NotesScreen> {
     await DbHelper.deleteNote(id);
     _loadNotes();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Catatan berhasil dihapus')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppText.get('noteDeleted'))));
     }
   }
 
@@ -77,9 +78,7 @@ class _NotesScreenState extends State<NotesScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notes'),
-      ),
+      appBar: AppBar(title: Text(AppText.get('notes'))),
       body: Column(
         children: [
           // Search Bar
@@ -88,7 +87,7 @@ class _NotesScreenState extends State<NotesScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Cari catatan...',
+                hintText: AppText.get('searchNotes'),
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 fillColor: isDark ? AppColors.darkCard : Colors.white,
@@ -96,105 +95,126 @@ class _NotesScreenState extends State<NotesScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
                     width: 1,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
                     width: 1,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
           ),
-          
+
           // Notes Grid
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredNotes.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.note_alt_outlined,
-                              size: 72,
-                              color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.5) : AppColors.lightTextSecondary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Tidak ada catatan',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.note_alt_outlined,
+                          size: 72,
+                          color: isDark
+                              ? AppColors.darkTextSecondary.withValues(
+                                  alpha: 0.5,
+                                )
+                              : AppColors.lightTextSecondary.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        const SizedBox(height: 16),
+                        Text(
+                          AppText.get('noNotes'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                           childAspectRatio: 0.85,
                         ),
-                        itemCount: _filteredNotes.length,
-                        itemBuilder: (context, index) {
-                          final note = _filteredNotes[index];
-                          return Slidable(
-                            key: ValueKey(note.id),
-                            endActionPane: ActionPane(
-                              motion: const DrawerMotion(),
-                              extentRatio: 0.8,
-                              children: [
-                                SlidableAction(
-                                  onPressed: (context) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => EditNoteScreen(note: note),
-                                      ),
-                                    ).then((_) => _loadNotes());
-                                  },
-                                  backgroundColor: AppColors.info,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.edit_rounded,
-                                  label: 'Edit',
-                                ),
-                                SlidableAction(
-                                  onPressed: (context) => _deleteNote(note.id!),
-                                  backgroundColor: AppColors.danger,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.delete_rounded,
-                                  label: 'Hapus',
-                                ),
-                              ],
-                            ),
-                            child: NoteCard(
-                              note: note,
-                              onTap: () {
+                    itemCount: _filteredNotes.length,
+                    itemBuilder: (context, index) {
+                      final note = _filteredNotes[index];
+                      return Slidable(
+                        key: ValueKey(note.id),
+                        endActionPane: ActionPane(
+                          motion: const DrawerMotion(),
+                          extentRatio: 0.8,
+                          children: [
+                            SlidableAction(
+                              onPressed: (context) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => EditNoteScreen(note: note),
+                                    builder: (context) =>
+                                        EditNoteScreen(note: note),
                                   ),
                                 ).then((_) => _loadNotes());
                               },
+                              backgroundColor: AppColors.info,
+                              foregroundColor: Colors.white,
+                              icon: Icons.edit_rounded,
+                              label: AppText.get('edit'),
                             ),
-                          );
-                        },
-                      ),
+                            SlidableAction(
+                              onPressed: (context) => _deleteNote(note.id!),
+                              backgroundColor: AppColors.danger,
+                              foregroundColor: Colors.white,
+                              icon: Icons.delete_rounded,
+                              label: AppText.get('delete'),
+                            ),
+                          ],
+                        ),
+                        child: NoteCard(
+                          note: note,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EditNoteScreen(note: note),
+                              ),
+                            ).then((_) => _loadNotes());
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

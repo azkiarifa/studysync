@@ -3,7 +3,9 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../database/db_helper.dart';
 import '../../models/task_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../widgets/task_card.dart';
+import 'task_detail_screen.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
 
@@ -57,9 +59,9 @@ class _TaskScreenState extends State<TaskScreen> {
     await DbHelper.deleteTask(id);
     _loadTasks();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tugas berhasil dihapus')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppText.get('taskDeleted'))));
     }
   }
 
@@ -69,12 +71,12 @@ class _TaskScreenState extends State<TaskScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: Text(AppText.get('tasks')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadTasks,
-          )
+          ),
         ],
       ),
       body: Column(
@@ -84,101 +86,112 @@ class _TaskScreenState extends State<TaskScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Row(
               children: [
-                _buildFilterChip('All'),
+                _buildFilterChip('All', AppText.get('all')),
                 const SizedBox(width: 8),
-                _buildFilterChip('Pending'),
+                _buildFilterChip('Pending', AppText.get('pending')),
                 const SizedBox(width: 8),
-                _buildFilterChip('Completed'),
+                _buildFilterChip('Completed', AppText.get('completed')),
               ],
             ),
           ),
-          
+
           // Tasks List
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredTasks.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.assignment_turned_in_outlined,
-                              size: 72,
-                              color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.5) : AppColors.lightTextSecondary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Tidak ada tugas',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.assignment_turned_in_outlined,
+                          size: 72,
+                          color: isDark
+                              ? AppColors.darkTextSecondary.withValues(
+                                  alpha: 0.5,
+                                )
+                              : AppColors.lightTextSecondary.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: _filteredTasks.length,
-                        itemBuilder: (context, index) {
-                          final task = _filteredTasks[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Slidable(
-                              key: ValueKey(task.id),
-                              endActionPane: ActionPane(
-                                motion: const DrawerMotion(),
-                                extentRatio: 0.5,
-                                children: [
-                                  SlidableAction(
-                                    onPressed: (context) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => EditTaskScreen(task: task),
-                                        ),
-                                      ).then((_) => _loadTasks());
-                                    },
-                                    backgroundColor: AppColors.info,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.edit_rounded,
-                                    label: 'Edit',
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      bottomLeft: Radius.circular(16),
-                                    ),
-                                  ),
-                                  SlidableAction(
-                                    onPressed: (context) => _deleteTask(task.id!),
-                                    backgroundColor: AppColors.danger,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.delete_rounded,
-                                    label: 'Hapus',
-                                    borderRadius: const BorderRadius.only(
-                                      topRight: Radius.circular(16),
-                                      bottomRight: Radius.circular(16),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              child: TaskCard(
-                                task: task,
-                                onStatusChanged: (value) => _toggleTaskStatus(task, value),
-                                onTap: () {
+                        const SizedBox(height: 16),
+                        Text(
+                          AppText.get('noTasks'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: _filteredTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = _filteredTasks[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Slidable(
+                          key: ValueKey(task.id),
+                          endActionPane: ActionPane(
+                            motion: const DrawerMotion(),
+                            extentRatio: 0.5,
+                            children: [
+                              SlidableAction(
+                                onPressed: (context) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => EditTaskScreen(task: task),
+                                      builder: (context) =>
+                                          EditTaskScreen(task: task),
                                     ),
                                   ).then((_) => _loadTasks());
                                 },
+                                backgroundColor: AppColors.info,
+                                foregroundColor: Colors.white,
+                                icon: Icons.edit_rounded,
+                                label: AppText.get('edit'),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                              SlidableAction(
+                                onPressed: (context) => _deleteTask(task.id!),
+                                backgroundColor: AppColors.danger,
+                                foregroundColor: Colors.white,
+                                icon: Icons.delete_rounded,
+                                label: AppText.get('delete'),
+                                borderRadius: const BorderRadius.only(
+                                  topRight: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                            ],
+                          ),
+                          child: TaskCard(
+                            task: task,
+                            onStatusChanged: (value) =>
+                                _toggleTaskStatus(task, value),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      TaskDetailScreen(task: task),
+                                ),
+                              ).then((_) => _loadTasks());
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -194,10 +207,10 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 
-  Widget _buildFilterChip(String filterName) {
+  Widget _buildFilterChip(String filterName, String label) {
     final isSelected = _filter == filterName;
     return ChoiceChip(
-      label: Text(filterName),
+      label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) {
@@ -215,7 +228,9 @@ class _TaskScreenState extends State<TaskScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected ? AppColors.primary : Colors.grey.withValues(alpha: 0.3),
+          color: isSelected
+              ? AppColors.primary
+              : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
     );

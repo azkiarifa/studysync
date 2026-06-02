@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/schedule_model.dart';
+import '../../utils/app_text.dart';
 import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
@@ -105,7 +106,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
       await DbHelper.insertSchedule(schedule);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jadwal berhasil ditambahkan')),
+          SnackBar(content: Text(AppText.get('scheduleAdded'))),
         );
         Navigator.pop(context);
       }
@@ -127,7 +128,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Schedule'),
+        title: Text(AppText.get('addSchedule')),
       ),
       body: Form(
         key: _formKey,
@@ -136,30 +137,30 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Nama Kegiatan / Kuliah',
-              hintText: 'Masukkan nama jadwal...',
+              labelText: AppText.get('activityName'),
+              hintText: AppText.get('scheduleTitleHint'),
               prefixIcon: Icons.title_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Nama Jadwal'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _locationController,
-              labelText: 'Ruangan / Lokasi',
-              hintText: 'Gedung A-302 / Zoom...',
+              labelText: AppText.get('location'),
+              hintText: AppText.get('locationHint'),
               prefixIcon: Icons.location_on_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Lokasi'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _lecturerController,
-              labelText: 'Dosen Pengampu',
-              hintText: 'Nama dosen (opsional)...',
+              labelText: AppText.get('lecturer'),
+              hintText: AppText.get('lecturerHint'),
               prefixIcon: Icons.person_rounded,
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _dateController,
-              labelText: 'Tanggal',
+              labelText: AppText.get('date'),
               prefixIcon: Icons.calendar_today_rounded,
               readOnly: true,
               onTap: () => _selectDate(context),
@@ -170,7 +171,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _startTimeController,
-                    labelText: 'Mulai',
+                    labelText: AppText.get('start'),
                     prefixIcon: Icons.access_time_rounded,
                     readOnly: true,
                     onTap: () => _selectStartTime(context),
@@ -180,7 +181,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _endTimeController,
-                    labelText: 'Selesai',
+                    labelText: AppText.get('end'),
                     prefixIcon: Icons.access_time_rounded,
                     readOnly: true,
                     onTap: () => _selectEndTime(context),
@@ -191,8 +192,8 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
             const SizedBox(height: 24),
             
             // Color Selector
-            const Text(
-              'Pilih Warna Penanda',
+            Text(
+              AppText.get('chooseMarkerColor'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -239,7 +240,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Jadwal',
+              text: AppText.get('saveSchedule'),
               onTap: _saveSchedule,
               icon: Icons.save_rounded,
             ),

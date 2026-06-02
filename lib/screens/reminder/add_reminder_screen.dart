@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/reminder_model.dart';
+import '../../utils/app_text.dart';
 import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
@@ -79,7 +80,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
       await DbHelper.insertReminder(reminder);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pengingat berhasil disimpan')),
+          SnackBar(content: Text(AppText.get('reminderSaved'))),
         );
         Navigator.pop(context);
       }
@@ -100,7 +101,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Reminder'),
+        title: Text(AppText.get('addReminder')),
       ),
       body: Form(
         key: _formKey,
@@ -109,8 +110,8 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Nama Pengingat',
-              hintText: 'Belajar kalkulus / Review materi...',
+              labelText: AppText.get('reminderName'),
+              hintText: AppText.get('reminderHint'),
               prefixIcon: Icons.title_rounded,
               validator: (value) => AppValidator.validateRequired(value, 'Nama Pengingat'),
             ),
@@ -120,7 +121,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _timeController,
-                    labelText: 'Waktu Alaram',
+                    labelText: AppText.get('alarmTime'),
                     prefixIcon: Icons.access_time_rounded,
                     readOnly: true,
                     onTap: () => _selectTime(context),
@@ -130,7 +131,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                 Expanded(
                   child: CustomTextField(
                     controller: _dateController,
-                    labelText: 'Tanggal Mulai',
+                    labelText: AppText.get('startDate'),
                     prefixIcon: Icons.calendar_today_rounded,
                     readOnly: true,
                     onTap: () => _selectDate(context),
@@ -142,7 +143,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
             DropdownButtonFormField<String>(
               initialValue: _selectedRepeat,
               decoration: InputDecoration(
-                labelText: 'Ulangi Pengingat',
+                labelText: AppText.get('repeatReminder'),
                 prefixIcon: const Icon(Icons.repeat_rounded),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -170,7 +171,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Pengingat',
+              text: AppText.get('saveReminder'),
               onTap: _saveReminder,
               icon: Icons.save_rounded,
             ),

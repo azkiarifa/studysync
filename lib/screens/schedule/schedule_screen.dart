@@ -4,9 +4,11 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../database/db_helper.dart';
 import '../../models/schedule_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../widgets/schedule_card.dart';
 import 'add_schedule_screen.dart';
 import 'edit_schedule_screen.dart';
+import '../task/add_task_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -49,13 +51,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _deleteSchedule(int id) async {
+    final messenger = ScaffoldMessenger.of(context);
     await DbHelper.deleteSchedule(id);
     _loadSchedules();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Jadwal berhasil dihapus')),
-      );
-    }
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(AppText.get('scheduleDeleted'))),
+    );
   }
 
   @override
@@ -64,12 +66,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Schedule'),
+        title: Text(AppText.get('schedule')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadSchedules,
-          )
+          ),
         ],
       ),
       body: Column(
@@ -81,7 +83,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               color: isDark ? AppColors.darkCard : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.darkBorder.withValues(alpha: 0.5) : AppColors.lightBorder,
+                color: isDark
+                    ? AppColors.darkBorder.withValues(alpha: 0.5)
+                    : AppColors.lightBorder,
                 width: 1,
               ),
             ),
@@ -116,17 +120,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
           ),
-          
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Row(
               children: [
                 Text(
-                  'Agenda Hari Ini',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  AppText.get('todayAgenda'),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -137,85 +138,137 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _selectedDaySchedules.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.event_busy_rounded,
-                              size: 64,
-                              color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.5) : AppColors.lightTextSecondary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Tidak ada kegiatan kuliah',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.event_busy_rounded,
+                          size: 64,
+                          color: isDark
+                              ? AppColors.darkTextSecondary.withValues(
+                                  alpha: 0.5,
+                                )
+                              : AppColors.lightTextSecondary.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: _selectedDaySchedules.length,
-                        itemBuilder: (context, index) {
-                          final schedule = _selectedDaySchedules[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Slidable(
-                              key: ValueKey(schedule.id),
-                              endActionPane: ActionPane(
-                                motion: const DrawerMotion(),
-                                extentRatio: 0.5,
-                                children: [
-                                  SlidableAction(
-                                    onPressed: (context) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => EditScheduleScreen(schedule: schedule),
+                        const SizedBox(height: 12),
+                        Text(
+                          AppText.get('noSchedule'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: _selectedDaySchedules.length,
+                    itemBuilder: (context, index) {
+                      final schedule = _selectedDaySchedules[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Slidable(
+                          key: ValueKey(schedule.id),
+                          endActionPane: ActionPane(
+                            motion: const DrawerMotion(),
+                            extentRatio: 0.5,
+                            children: [
+                              SlidableAction(
+                                onPressed: (context) async {
+                                  final localContext = context;
+                                  final messenger = ScaffoldMessenger.of(
+                                    localContext,
+                                  );
+                                  // Create task from schedule and link it
+                                  final newTaskId = await Navigator.push<int?>(
+                                    localContext,
+                                    MaterialPageRoute(
+                                      builder: (context) => AddTaskScreen(
+                                        initialTitle: schedule.title,
+                                        initialDescription: '',
+                                        initialDate: schedule.date,
+                                        initialPriority: 'Medium',
+                                        initialCategory: 'Tugas',
+                                        initialScheduleId: schedule.id,
+                                      ),
+                                    ),
+                                  );
+                                  if (newTaskId != null) {
+                                    if (!mounted) return;
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          AppText.get('taskLinkedToSchedule'),
                                         ),
-                                      ).then((_) => _loadSchedules());
-                                    },
-                                    backgroundColor: AppColors.info,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.edit_rounded,
-                                    label: 'Edit',
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      bottomLeft: Radius.circular(16),
-                                    ),
-                                  ),
-                                  SlidableAction(
-                                    onPressed: (context) => _deleteSchedule(schedule.id!),
-                                    backgroundColor: AppColors.danger,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.delete_rounded,
-                                    label: 'Hapus',
-                                    borderRadius: const BorderRadius.only(
-                                      topRight: Radius.circular(16),
-                                      bottomRight: Radius.circular(16),
-                                    ),
-                                  ),
-                                ],
+                                      ),
+                                    );
+                                  }
+                                },
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                icon: Icons.post_add_rounded,
+                                label: AppText.get('createTask'),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
                               ),
-                              child: ScheduleCard(
-                                schedule: schedule,
-                                onTap: () {
+                              SlidableAction(
+                                onPressed: (context) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => EditScheduleScreen(schedule: schedule),
+                                      builder: (context) => EditScheduleScreen(
+                                        schedule: schedule,
+                                      ),
                                     ),
                                   ).then((_) => _loadSchedules());
                                 },
+                                backgroundColor: AppColors.info,
+                                foregroundColor: Colors.white,
+                                icon: Icons.edit_rounded,
+                                label: AppText.get('edit'),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                              SlidableAction(
+                                onPressed: (context) =>
+                                    _deleteSchedule(schedule.id!),
+                                backgroundColor: AppColors.danger,
+                                foregroundColor: Colors.white,
+                                icon: Icons.delete_rounded,
+                                label: AppText.get('delete'),
+                                borderRadius: const BorderRadius.only(
+                                  topRight: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                            ],
+                          ),
+                          child: ScheduleCard(
+                            schedule: schedule,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      EditScheduleScreen(schedule: schedule),
+                                ),
+                              ).then((_) => _loadSchedules());
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -224,7 +277,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddScheduleScreen(initialDate: _selectedDay),
+              builder: (context) =>
+                  AddScheduleScreen(initialDate: _selectedDay),
             ),
           ).then((_) => _loadSchedules());
         },

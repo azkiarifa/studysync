@@ -19,13 +19,16 @@ class HabitModel {
     String? frequency,
     int? streak,
     DateTime? lastCompleted,
+    bool clearLastCompleted = false,
   }) {
     return HabitModel(
       id: id ?? this.id,
       name: name ?? this.name,
       frequency: frequency ?? this.frequency,
       streak: streak ?? this.streak,
-      lastCompleted: lastCompleted ?? this.lastCompleted,
+      lastCompleted: clearLastCompleted
+          ? null
+          : lastCompleted ?? this.lastCompleted,
     );
   }
 
@@ -57,5 +60,41 @@ class HabitModel {
     return lastCompleted!.year == now.year &&
         lastCompleted!.month == now.month &&
         lastCompleted!.day == now.day;
+  }
+
+  bool get isCompletedThisWeek {
+    if (lastCompleted == null) return false;
+    final now = DateTime.now();
+    return _startOfWeek(lastCompleted!).isAtSameMomentAs(_startOfWeek(now));
+  }
+
+  bool get isCompletedForCurrentPeriod {
+    if (frequency == 'Weekly') return isCompletedThisWeek;
+    return isCompletedToday;
+  }
+
+  bool get wasCompletedInPreviousPeriod {
+    if (lastCompleted == null) return false;
+    final now = DateTime.now();
+
+    if (frequency == 'Weekly') {
+      final currentWeek = _startOfWeek(now);
+      final previousWeek = currentWeek.subtract(const Duration(days: 7));
+      return _startOfWeek(lastCompleted!).isAtSameMomentAs(previousWeek);
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final completedDay = DateTime(
+      lastCompleted!.year,
+      lastCompleted!.month,
+      lastCompleted!.day,
+    );
+    return completedDay.isAtSameMomentAs(yesterday);
+  }
+
+  static DateTime _startOfWeek(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - 1));
   }
 }

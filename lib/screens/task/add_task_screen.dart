@@ -2,13 +2,29 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/task_model.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
 class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({super.key});
+  final String? initialTitle;
+  final String? initialDescription;
+  final DateTime? initialDate;
+  final String? initialPriority;
+  final String? initialCategory;
+  final int? initialScheduleId;
+
+  const AddTaskScreen({
+    super.key,
+    this.initialTitle,
+    this.initialDescription,
+    this.initialDate,
+    this.initialPriority,
+    this.initialCategory,
+    this.initialScheduleId,
+  });
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
@@ -19,10 +35,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _dateController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   String _selectedPriority = 'Medium';
   String _selectedCategory = 'Tugas';
+  int? _selectedScheduleId;
 
   final List<String> _priorities = ['Low', 'Medium', 'High'];
   final List<String> _categories = ['Tugas', 'Projek', 'Ujian', 'Lainnya'];
@@ -30,6 +47,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialTitle != null)
+      _titleController.text = widget.initialTitle!;
+    if (widget.initialDescription != null)
+      _descController.text = widget.initialDescription!;
+    if (widget.initialDate != null) _selectedDate = widget.initialDate!;
+    if (widget.initialPriority != null)
+      _selectedPriority = widget.initialPriority!;
+    if (widget.initialCategory != null)
+      _selectedCategory = widget.initialCategory!;
+    if (widget.initialScheduleId != null) {
+      _selectedScheduleId = widget.initialScheduleId;
+    }
     _dateController.text = DateHelper.formatShortDate(_selectedDate);
   }
 
@@ -57,14 +86,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         priority: _selectedPriority,
         category: _selectedCategory,
         isCompleted: false,
+        scheduleId: _selectedScheduleId,
       );
 
-      await DbHelper.insertTask(task);
+      final newId = await DbHelper.insertTask(task);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tugas berhasil ditambahkan')),
-        );
-        Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppText.get('taskAdded'))));
+        Navigator.pop(context, newId);
       }
     }
   }
@@ -80,9 +110,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Task'),
-      ),
+      appBar: AppBar(title: Text(AppText.get('addTask'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -90,32 +118,33 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           children: [
             CustomTextField(
               controller: _titleController,
-              labelText: 'Judul Tugas',
-              hintText: 'Masukkan judul tugas...',
+              labelText: AppText.get('taskTitle'),
+              hintText: AppText.get('taskTitleHint'),
               prefixIcon: Icons.title_rounded,
-              validator: (value) => AppValidator.validateRequired(value, 'Judul'),
+              validator: (value) =>
+                  AppValidator.validateRequired(value, 'Judul'),
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _descController,
-              labelText: 'Deskripsi',
-              hintText: 'Masukkan rincian tugas (opsional)...',
+              labelText: AppText.get('description'),
+              hintText: AppText.get('taskDescHint'),
               prefixIcon: Icons.description_rounded,
               maxLines: 3,
             ),
             const SizedBox(height: 20),
             CustomTextField(
               controller: _dateController,
-              labelText: 'Tenggat Waktu',
+              labelText: AppText.get('dueDate'),
               prefixIcon: Icons.calendar_today_rounded,
               readOnly: true,
               onTap: () => _selectDate(context),
             ),
             const SizedBox(height: 24),
-            
+
             // Priority Selection
-            const Text(
-              'Prioritas',
+            Text(
+              AppText.get('priority'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -148,8 +177,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 24),
 
             // Category Selection
-            const Text(
-              'Kategori',
+            Text(
+              AppText.get('category'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -178,7 +207,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 40),
 
             CustomButton(
-              text: 'Simpan Tugas',
+              text: AppText.get('saveTask'),
               onTap: _saveTask,
               icon: Icons.save_rounded,
             ),

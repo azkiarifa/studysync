@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/study_session_model.dart';
+import '../../models/task_model.dart';
 import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
 class AddSessionScreen extends StatefulWidget {
-  const AddSessionScreen({super.key});
+  final int? initialTaskId;
+  final String? initialSubject;
+
+  const AddSessionScreen({super.key, this.initialTaskId, this.initialSubject});
 
   @override
   State<AddSessionScreen> createState() => _AddSessionScreenState();
@@ -20,22 +24,24 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
   final _dateController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
-  String _selectedSubject = 'Pengujian Perangkat Lunak';
-
-  final List<String> _subjects = [
-    'Pengujian Perangkat Lunak',
-    'Proyek SI',
-    'Dasar Ilmu Data',
-    'Agama',
-    'Pengembangan Profesional',
-    'Bahasa Inggris',
-    'Lainnya'
-  ];
+  List<TaskModel> _availableTasks = [];
+  int? _selectedTaskId;
 
   @override
   void initState() {
     super.initState();
     _dateController.text = DateHelper.formatShortDate(_selectedDate);
+    if (widget.initialTaskId != null) {
+      _selectedTaskId = widget.initialTaskId;
+    }
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final tasks = await DbHelper.getAllTasks();
+    setState(() {
+      _availableTasks = tasks;
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -56,8 +62,10 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
   Future<void> _saveSession() async {
     if (_formKey.currentState!.validate()) {
       final minutes = int.parse(_durationController.text);
+      final selectedTask = _availableTasks.firstWhere((task) => task.id == _selectedTaskId);
       final session = StudySessionModel(
-        subject: _selectedSubject,
+        taskId: _selectedTaskId,
+        subject: selectedTask.title,
         date: _selectedDate,
         durationSeconds: minutes * 60,
         notes: _notesController.text.trim(),
@@ -94,11 +102,11 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            DropdownButtonFormField<String>(
-              value: _selectedSubject,
+            DropdownButtonFormField<int?>(
+              initialValue: _selectedTaskId,
               decoration: InputDecoration(
-                labelText: 'Mata Kuliah',
-                prefixIcon: const Icon(Icons.menu_book_rounded),
+                labelText: 'Pilih tugas',
+                prefixIcon: const Icon(Icons.task_rounded),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -110,16 +118,29 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
                   ),
                 ),
               ),
-              items: _subjects.map((String sub) {
-                return DropdownMenuItem<String>(
-                  value: sub,
-                  child: Text(sub),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() => _selectedSubject = newValue);
+              validator: (value) {
+                if (value == null) {
+                  return 'Pilih tugas yang akan dilaporkan dalam sesi belajar';
                 }
+                return null;
+              },
+              items: _availableTasks.isNotEmpty
+                  ? _availableTasks.map((task) {
+                      return DropdownMenuItem<int?>(
+                        value: task.id,
+                        child: Text(task.title),
+                      );
+                    }).toList()
+                  : [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('Tidak ada tugas tersedia'),
+                      ),
+                    ],
+              onChanged: (int? value) {
+                setState(() {
+                  _selectedTaskId = value;
+                });
               },
             ),
             const SizedBox(height: 20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/sharedpref_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/app_text.dart';
 import '../../widgets/custom_button.dart';
 import '../../main.dart'; // Import to reference themeNotifier
 
@@ -39,7 +40,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _isDarkMode = isDark;
     });
     // Trigger global theme update
-    StudySyncApp.themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+    StudySyncApp.themeNotifier.value = isDark
+        ? ThemeMode.dark
+        : ThemeMode.light;
   }
 
   Future<void> _toggleNotification(bool enabled) async {
@@ -62,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _selectedLanguage = lang;
       });
+      StudySyncApp.languageNotifier.value++;
     }
   }
 
@@ -70,7 +74,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset Pengaturan'),
-        content: const Text('Apakah Anda yakin ingin mengembalikan semua pengaturan ke default?'),
+        content: const Text(
+          'Apakah Anda yakin ingin mengembalikan semua pengaturan ke default?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -90,7 +96,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            child: const Text('Reset', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Reset',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -102,22 +111,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: Text(AppText.get('settings'))),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           // Section Tampilan
-          const Text(
-            'Tampilan',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
+          Text(
+            AppText.get('display'),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 12),
           Card(
             child: ListTile(
               leading: const Icon(Icons.dark_mode_rounded),
-              title: const Text('Mode Gelap (Dark Mode)'),
+              title: Text(AppText.get('darkMode')),
               trailing: Switch(
                 value: _isDarkMode,
                 activeColor: AppColors.primary,
@@ -128,9 +139,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Section Notifikasi & Fokus
-          const Text(
-            'Keamanan & Fokus',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
+          Text(
+            AppText.get('focusSecurity'),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 12),
           Card(
@@ -138,18 +153,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.notifications_rounded),
-                  title: const Text('Notifikasi Aplikasi'),
+                  title: Text(AppText.get('notifications')),
                   trailing: Switch(
                     value: _notificationEnabled,
                     activeColor: AppColors.primary,
                     onChanged: _toggleNotification,
                   ),
                 ),
-                Divider(height: 1, color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                Divider(
+                  height: 1,
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                ),
                 ListTile(
                   leading: const Icon(Icons.do_not_disturb_on_rounded),
-                  title: const Text('Mode Fokus'),
-                  subtitle: const Text('Kurangi gangguan saat sesi belajar'),
+                  title: Text(AppText.get('focusMode')),
+                  subtitle: Text(AppText.get('focusModeDesc')),
                   trailing: Switch(
                     value: _focusModeEnabled,
                     activeColor: AppColors.primary,
@@ -162,20 +180,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Section Bahasa
-          const Text(
-            'Bahasa',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
+          Text(
+            AppText.get('language'),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 12),
           Card(
             child: ListTile(
               leading: const Icon(Icons.language_rounded),
-              title: const Text('Pilih Bahasa'),
+              title: Text(AppText.get('chooseLanguage')),
               trailing: DropdownButton<String>(
                 value: _selectedLanguage,
                 underline: const SizedBox(),
                 items: const [
-                  DropdownMenuItem(value: 'id', child: Text('Bahasa Indonesia')),
+                  DropdownMenuItem(
+                    value: 'id',
+                    child: Text('Bahasa Indonesia'),
+                  ),
                   DropdownMenuItem(value: 'en', child: Text('English')),
                 ],
                 onChanged: _changeLanguage,
@@ -186,9 +211,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Reset Button
           CustomButton(
-            text: 'Reset Ke Default',
+            text: AppText.get('resetDefault'),
             onTap: _resetPreferences,
-            gradient: const LinearGradient(colors: [AppColors.danger, Colors.orange]),
+            gradient: const LinearGradient(
+              colors: [AppColors.danger, Colors.orange],
+            ),
             icon: Icons.restore_rounded,
           ),
         ],
