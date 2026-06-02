@@ -1,37 +1,36 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
-import '../../models/deck_model.dart';
-import '../../models/flashcard_model.dart';
+import '../../models/subject_model.dart';
+import '../../models/glossary_model.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
-import 'study_screen.dart';
 
-class DeckDetailScreen extends StatefulWidget {
-  final DeckModel deck;
+class GlossaryDetailScreen extends StatefulWidget {
+  final SubjectModel subject;
 
-  const DeckDetailScreen({super.key, required this.deck});
+  const GlossaryDetailScreen({super.key, required this.subject});
 
   @override
-  State<DeckDetailScreen> createState() => _DeckDetailScreenState();
+  State<GlossaryDetailScreen> createState() => _GlossaryDetailScreenState();
 }
 
-class _DeckDetailScreenState extends State<DeckDetailScreen> {
-  List<FlashcardModel> _cards = [];
+class _GlossaryDetailScreenState extends State<GlossaryDetailScreen> {
+  List<GlossaryModel> _glossaries = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCards();
+    _loadGlossaries();
   }
 
-  Future<void> _loadCards() async {
+  Future<void> _loadGlossaries() async {
     setState(() => _isLoading = true);
     try {
-      final cards = await DbHelper.getAllFlashcards(widget.deck.id!);
+      final glossaries = await DbHelper.getAllGlossaries(widget.subject.id!);
       setState(() {
-        _cards = cards;
+        _glossaries = glossaries;
         _isLoading = false;
       });
     } catch (e) {
@@ -39,19 +38,19 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     }
   }
 
-  Future<void> _deleteCard(int id) async {
+  Future<void> _deleteGlossary(int id) async {
     final messenger = ScaffoldMessenger.of(context);
-    await DbHelper.deleteFlashcard(id);
-    _loadCards();
+    await DbHelper.deleteGlossary(id);
+    _loadGlossaries();
     if (!mounted) return;
     messenger.showSnackBar(
-      const SnackBar(content: Text('Kartu berhasil dihapus')),
+      const SnackBar(content: Text('Istilah berhasil dihapus')),
     );
   }
 
-  void _showAddCardSheet({FlashcardModel? editCard}) {
-    final questionController = TextEditingController(text: editCard?.question ?? '');
-    final answerController = TextEditingController(text: editCard?.answer ?? '');
+  void _showAddGlossarySheet({GlossaryModel? editGlossary}) {
+    final termController = TextEditingController(text: editGlossary?.term ?? '');
+    final definitionController = TextEditingController(text: editGlossary?.definition ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -85,7 +84,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  editCard != null ? 'Edit Kartu' : 'Tambah Kartu Baru',
+                  editGlossary != null ? 'Edit Istilah' : 'Tambah Istilah Baru',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -94,51 +93,51 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 CustomTextField(
-                  controller: questionController,
-                  labelText: 'Pertanyaan',
-                  hintText: 'Tulis pertanyaan di sini...',
-                  prefixIcon: Icons.help_outline_rounded,
-                  maxLines: 3,
+                  controller: termController,
+                  labelText: 'Istilah',
+                  hintText: 'Masukkan istilah...',
+                  prefixIcon: Icons.title_rounded,
+                  maxLines: 1,
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
-                  controller: answerController,
-                  labelText: 'Jawaban',
-                  hintText: 'Tulis jawaban di sini...',
-                  prefixIcon: Icons.lightbulb_outline_rounded,
+                  controller: definitionController,
+                  labelText: 'Definisi',
+                  hintText: 'Tulis definisi di sini...',
+                  prefixIcon: Icons.description_rounded,
                   maxLines: 4,
                 ),
                 const SizedBox(height: 24),
                 CustomButton(
-                  text: editCard != null ? 'Simpan Perubahan' : 'Tambah Kartu',
+                  text: editGlossary != null ? 'Simpan Perubahan' : 'Tambah Istilah',
                   icon: Icons.save_rounded,
                   onTap: () async {
-                    if (questionController.text.trim().isEmpty ||
-                        answerController.text.trim().isEmpty) {
+                    if (termController.text.trim().isEmpty ||
+                        definitionController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Pertanyaan dan jawaban harus diisi')),
+                        const SnackBar(content: Text('Istilah dan definisi harus diisi')),
                       );
                       return;
                     }
 
-                    if (editCard != null) {
-                      final updated = editCard.copyWith(
-                        question: questionController.text.trim(),
-                        answer: answerController.text.trim(),
+                    if (editGlossary != null) {
+                      final updated = editGlossary.copyWith(
+                        term: termController.text.trim(),
+                        definition: definitionController.text.trim(),
                       );
-                      await DbHelper.updateFlashcard(updated);
+                      await DbHelper.updateGlossary(updated);
                     } else {
-                      final card = FlashcardModel(
-                        deckId: widget.deck.id!,
-                        question: questionController.text.trim(),
-                        answer: answerController.text.trim(),
+                      final glossary = GlossaryModel(
+                        subjectId: widget.subject.id!,
+                        term: termController.text.trim(),
+                        definition: definitionController.text.trim(),
                       );
-                      await DbHelper.insertFlashcard(card);
+                      await DbHelper.insertGlossary(glossary);
                     }
 
                     if (!mounted) return;
                     Navigator.pop(context);
-                    _loadCards();
+                    _loadGlossaries();
                   },
                 ),
               ],
@@ -149,41 +148,21 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final deckColor = Color(widget.deck.color);
-    final learnedCount = _cards.where((c) => c.isLearned).length;
+    final subjectColor = Color(widget.subject.color);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.deck.title),
-        actions: [
-          if (_cards.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.restart_alt_rounded),
-              tooltip: 'Reset semua progress',
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                for (final card in _cards) {
-                  if (card.isLearned) {
-                    await DbHelper.updateFlashcard(card.copyWith(isLearned: false));
-                  }
-                }
-                _loadCards();
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Progress telah direset')),
-                );
-              },
-            ),
-        ],
+        title: Text(widget.subject.title),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Deck header with stats
+                // Subject header with stats
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.fromLTRB(24, 8, 24, 16),
@@ -192,15 +171,15 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(
                       colors: [
-                        deckColor,
-                        deckColor.withValues(alpha: 0.7),
+                        subjectColor,
+                        subjectColor.withValues(alpha: 0.7),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: deckColor.withValues(alpha: 0.3),
+                        color: subjectColor.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 8),
                       ),
@@ -209,68 +188,28 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (widget.deck.description.isNotEmpty)
+                      if (widget.subject.description.isNotEmpty)
                         Text(
-                          widget.deck.description,
+                          widget.subject.description,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
-                      if (widget.deck.description.isNotEmpty)
+                      if (widget.subject.description.isNotEmpty)
                         const SizedBox(height: 16),
                       Row(
                         children: [
-                          _buildStatChip(Icons.style_rounded, '${_cards.length} Kartu'),
-                          const SizedBox(width: 12),
-                          _buildStatChip(Icons.check_circle_rounded, '$learnedCount Dipahami'),
-                          const SizedBox(width: 12),
-                          _buildStatChip(Icons.pending_rounded, '${_cards.length - learnedCount} Belum'),
+                          _buildStatChip(Icons.list_alt_rounded, '${_glossaries.length} Istilah'),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Start study button
-                      if (_cards.isNotEmpty)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StudyScreen(
-                                    deck: widget.deck,
-                                    cards: _cards,
-                                  ),
-                                ),
-                              ).then((_) => _loadCards());
-                            },
-                            icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-                            label: const Text(
-                              'Mulai Belajar',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(alpha: 0.25),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              elevation: 0,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
 
-                // Card list
+                // Glossary list
                 Expanded(
-                  child: _cards.isEmpty
+                  child: _glossaries.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +223,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Belum ada kartu flash',
+                                'Belum ada istilah',
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -293,7 +232,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Tap tombol + untuk menambahkan kartu',
+                                'Tap tombol + untuk menambahkan istilah',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
@@ -304,9 +243,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
-                          itemCount: _cards.length,
+                          itemCount: _glossaries.length,
                           itemBuilder: (context, index) {
-                            final card = _cards[index];
+                            final glossary = _glossaries[index];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Container(
@@ -314,9 +253,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                                   color: isDark ? AppColors.darkCard : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: card.isLearned
-                                        ? AppColors.success.withValues(alpha: 0.5)
-                                        : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
@@ -334,16 +271,12 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: card.isLearned
-                                              ? AppColors.success.withValues(alpha: 0.1)
-                                              : deckColor.withValues(alpha: 0.1),
+                                          color: subjectColor.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Icon(
-                                          card.isLearned
-                                              ? Icons.check_circle_rounded
-                                              : Icons.help_outline_rounded,
-                                          color: card.isLearned ? AppColors.success : deckColor,
+                                          Icons.label_outline_rounded,
+                                          color: subjectColor,
                                           size: 22,
                                         ),
                                       ),
@@ -353,7 +286,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              card.question,
+                                              glossary.term,
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
@@ -364,13 +297,11 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
-                                              card.answer,
+                                              glossary.definition,
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 13,
                                                 color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                                               ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ],
                                         ),
@@ -378,9 +309,9 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
                                       PopupMenuButton<String>(
                                         onSelected: (value) {
                                           if (value == 'edit') {
-                                            _showAddCardSheet(editCard: card);
+                                            _showAddGlossarySheet(editGlossary: glossary);
                                           } else if (value == 'delete') {
-                                            _deleteCard(card.id!);
+                                            _deleteGlossary(glossary.id!);
                                           }
                                         },
                                         itemBuilder: (context) => [
@@ -404,7 +335,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCardSheet(),
+        onPressed: () => _showAddGlossarySheet(),
         child: const Icon(Icons.add_rounded),
       ),
     );

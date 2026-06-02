@@ -1,23 +1,23 @@
-class DeckModel {
+class SubjectModel {
   final int? id;
   final String title;
   final String description;
   final int color;
 
-  DeckModel({
+  SubjectModel({
     this.id,
     required this.title,
     required this.description,
     required this.color,
   });
 
-  DeckModel copyWith({
+  SubjectModel copyWith({
     int? id,
     String? title,
     String? description,
     int? color,
   }) {
-    return DeckModel(
+    return SubjectModel(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -34,8 +34,8 @@ class DeckModel {
     };
   }
 
-  factory DeckModel.fromMap(Map<String, dynamic> map) {
-    return DeckModel(
+  factory SubjectModel.fromMap(Map<String, dynamic> map) {
+    return SubjectModel(
       id: map['id'] as int?,
       title: map['title'] as String,
       description: map['description'] as String,

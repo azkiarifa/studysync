@@ -4,12 +4,16 @@ import '../theme/app_colors.dart';
 
 class HabitCard extends StatelessWidget {
   final HabitModel habit;
+  final bool isCompletedToday;
+  final int currentStreak;
   final VoidCallback onCompleteToggle;
   final VoidCallback onTap;
 
   const HabitCard({
     super.key,
     required this.habit,
+    required this.isCompletedToday,
+    required this.currentStreak,
     required this.onCompleteToggle,
     required this.onTap,
   });
@@ -17,7 +21,11 @@ class HabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+<<<<<<< HEAD
     final isCompleted = habit.isCompletedForCurrentPeriod;
+=======
+    final isCompleted = isCompletedToday;
+>>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -85,7 +93,7 @@ class HabitCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      habit.frequency,
+                      'Target: ${habit.targetDaysPerWeek} hari/minggu',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
@@ -115,7 +123,7 @@ class HabitCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${habit.streak}',
+                      '$currentStreak',
                       style: const TextStyle(
                         color: AppColors.warning,
                         fontWeight: FontWeight.bold,

@@ -16,6 +16,10 @@ import '../notes/review_materi_screen.dart';
 import '../habit/habit_screen.dart';
 import '../target/target_screen.dart';
 import '../study_session/session_screen.dart';
+<<<<<<< HEAD
+=======
+import '../glossary/glossary_subject_screen.dart';
+>>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
 import '../pomodoro/pomodoro_screen.dart';
 import '../profile/profile_screen.dart';
 import '../settings/settings_screen.dart';
@@ -588,6 +592,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               _buildMoreGridItem(
+<<<<<<< HEAD
                 title: AppText.get('reviewMateri'),
                 icon: Icons.fact_check_rounded,
                 color: AppColors.info,
@@ -597,6 +602,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     builder: (context) => const ReviewMateriScreen(),
                   ),
                 ),
+=======
+                title: 'Glossary',
+                icon: Icons.book_rounded,
+                color: AppColors.warning,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GlossarySubjectScreen())),
+>>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
               ),
               _buildMoreGridItem(
                 title: AppText.get('pomodoroShort'),
