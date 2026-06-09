@@ -12,19 +12,15 @@ import '../models/target_model.dart';
 import '../models/study_session_model.dart';
 import '../models/reminder_model.dart';
 import '../models/pomodoro_model.dart';
-import '../models/subject_model.dart';
-import '../models/glossary_model.dart';
+import '../models/deck_model.dart';
+import '../models/flashcard_model.dart';
 
 class DbHelper {
   static Database? _database;
   static const String dbName = 'studysync.db';
-<<<<<<< HEAD
   static const int dbVersion = 2;
   // bumped to 3 to add scheduleId in tasks
   static const int _targetDbVersion = 3;
-=======
-  static const int dbVersion = 3;
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
 
   static Future<Database> get database async {
     if (kIsWeb) {
@@ -109,18 +105,9 @@ class DbHelper {
       CREATE TABLE habits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        color INTEGER NOT NULL,
-        targetDaysPerWeek INTEGER NOT NULL,
-        createdAt TEXT NOT NULL
-      )
-    ''');
-
-    // Habit Logs table
-    await db.execute('''
-      CREATE TABLE habit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        habitId INTEGER NOT NULL,
-        dateCompleted TEXT NOT NULL
+        frequency TEXT NOT NULL,
+        streak INTEGER NOT NULL DEFAULT 0,
+        lastCompleted TEXT
       )
     ''');
 
@@ -169,9 +156,9 @@ class DbHelper {
       )
     ''');
 
-    // Glossary Subjects table
+    // Flashcard Decks table
     await db.execute('''
-      CREATE TABLE subjects (
+      CREATE TABLE flashcard_decks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
@@ -179,57 +166,16 @@ class DbHelper {
       )
     ''');
 
-    // Glossaries table
+    // Flashcards table
     await db.execute('''
-      CREATE TABLE glossaries (
+      CREATE TABLE flashcards (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subjectId INTEGER NOT NULL,
-        term TEXT NOT NULL,
-        definition TEXT NOT NULL
+        deckId INTEGER NOT NULL,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        isLearned INTEGER NOT NULL DEFAULT 0
       )
     ''');
-  }
-
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('DROP TABLE IF EXISTS habits');
-      await db.execute('''
-        CREATE TABLE habits (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          color INTEGER NOT NULL,
-          targetDaysPerWeek INTEGER NOT NULL,
-          createdAt TEXT NOT NULL
-        )
-      ''');
-      await db.execute('''
-        CREATE TABLE habit_logs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          habitId INTEGER NOT NULL,
-          dateCompleted TEXT NOT NULL
-        )
-      ''');
-    }
-    if (oldVersion < 3) {
-      await db.execute('DROP TABLE IF EXISTS flashcard_decks');
-      await db.execute('DROP TABLE IF EXISTS flashcards');
-      await db.execute('''
-        CREATE TABLE subjects (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          description TEXT,
-          color INTEGER NOT NULL
-        )
-      ''');
-      await db.execute('''
-        CREATE TABLE glossaries (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          subjectId INTEGER NOT NULL,
-          term TEXT NOT NULL,
-          definition TEXT NOT NULL
-        )
-      ''');
-    }
   }
 
   // --- WEB FALLBACK PERSISTENCE HELPERS ---
@@ -364,7 +310,6 @@ class DbHelper {
     );
 
     // Seed Notes
-<<<<<<< HEAD
     await insertNote(
       NoteModel(
         title: 'Rumus Kalkulus II',
@@ -395,48 +340,6 @@ class DbHelper {
         isPinned: false,
       ),
     );
-=======
-    await insertNote(NoteModel(
-      title: 'Rumus Kalkulus II',
-      content: '1. Integral Lipat Dua: digunakan untuk menghitung volume di bawah permukaan z = f(x,y).\n2. Teorema Green: menghubungkan integral garis di sepanjang kurva tertutup C dengan integral lipat dua di atas daerah R.',
-      createdAt: today,
-      color: 0xFFFFEDD5, // Pastel Amber
-      isPinned: true,
-    ));
-    await insertNote(NoteModel(
-      title: 'Ide Judul PKM 2026',
-      content: '1. Sistem IoT Smart Agriculture berbasis nodemcu untuk optimalisasi penyiraman tanaman.\n2. Aplikasi StudySync untuk meningkatkan efektivitas belajar kelompok mahasiswa.',
-      createdAt: today.subtract(const Duration(days: 1)),
-      color: 0xFFE0F2FE, // Pastel Blue
-      isPinned: true,
-    ));
-    await insertNote(NoteModel(
-      title: 'Daftar Referensi Buku Flutter',
-      content: '1. Flutter in Action oleh Eric Windmill.\n2. Cookbooks Flutter resmi di flutter.dev.\n3. Kursus praktis di YouTube Flutter Indonesia.',
-      createdAt: today.subtract(const Duration(days: 3)),
-      color: 0xFFF3E8FF, // Pastel Purple
-      isPinned: false,
-    ));
-
-    // Seed Habits
-    final habit1Id = await insertHabit(HabitModel(
-      name: 'Membaca Buku 15 Menit',
-      color: 0xFF10B981,
-      targetDaysPerWeek: 5,
-      createdAt: today.subtract(const Duration(days: 7)),
-    ));
-    final habit2Id = await insertHabit(HabitModel(
-      name: 'Belajar Coding 1 Jam',
-      color: 0xFF6366F1,
-      targetDaysPerWeek: 7,
-      createdAt: today.subtract(const Duration(days: 7)),
-    ));
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
-
-    // Seed Habit Logs
-    await insertHabitLog(HabitLogModel(habitId: habit1Id, dateCompleted: today.subtract(const Duration(days: 1))));
-    await insertHabitLog(HabitLogModel(habitId: habit2Id, dateCompleted: today.subtract(const Duration(days: 1))));
-    await insertHabitLog(HabitLogModel(habitId: habit2Id, dateCompleted: today));
 
     // Seed Targets
     await insertTarget(
@@ -524,7 +427,6 @@ class DbHelper {
       PomodoroModel(durationMinutes: 25, dateTime: today, category: 'Tugas'),
     );
 
-<<<<<<< HEAD
     // Seed Flashcards Decks
     final deck1Id = await insertDeck(
       DeckModel(
@@ -591,48 +493,6 @@ class DbHelper {
         isLearned: false,
       ),
     );
-=======
-    // Seed Glossary Subjects
-    final subject1Id = await insertSubject(SubjectModel(
-      title: 'Pemrograman Mobile',
-      description: 'Materi dasar Flutter, State Management, Widget, dan Lifecycle.',
-      color: 0xFF6366F1, // Indigo
-    ));
-    final subject2Id = await insertSubject(SubjectModel(
-      title: 'Kecerdasan Buatan (AI)',
-      description: 'Pengenalan Machine Learning, Neural Networks, dan Search Algorithms.',
-      color: 0xFFEC4899, // Pink
-    ));
-
-    // Seed Glossaries inside Subject 1
-    await insertGlossary(GlossaryModel(
-      subjectId: subject1Id,
-      term: 'Flutter',
-      definition: 'Framework UI open-source buatan Google untuk membangun aplikasi multiplatform berkualitas tinggi dari satu codebase tunggal.',
-    ));
-    await insertGlossary(GlossaryModel(
-      subjectId: subject1Id,
-      term: 'StatefulWidget',
-      definition: 'Widget yang dapat menyimpan data dinamis (state) dan merender ulang dirinya sendiri saat state berubah.',
-    ));
-    await insertGlossary(GlossaryModel(
-      subjectId: subject1Id,
-      term: 'State Management',
-      definition: '1. Provider (sangat ramah pemula)\n2. BLoC (cocok untuk skala enterprise)\n3. Riverpod (versi modern dari Provider).',
-    ));
-
-    // Seed Glossaries inside Subject 2
-    await insertGlossary(GlossaryModel(
-      subjectId: subject2Id,
-      term: 'Kecerdasan Buatan (AI)',
-      definition: 'Simulasi kecerdasan manusia yang diprogram ke dalam komputer agar mampu berpikir, belajar, memecahkan masalah, dan mengambil keputusan.',
-    ));
-    await insertGlossary(GlossaryModel(
-      subjectId: subject2Id,
-      term: 'Machine Learning',
-      definition: 'Machine Learning adalah algoritma yang belajar dari data untuk membuat prediksi. Deep Learning adalah subbidang Machine Learning yang terinspirasi oleh otak manusia dengan jaringan saraf tiruan berlapis (Deep Neural Networks).',
-    ));
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
   }
 
   // --- DATABASE OPERATIONS ---
@@ -914,69 +774,7 @@ class DbHelper {
       return 0;
     }
     final db = await database;
-<<<<<<< HEAD
     return await db.delete('habits', where: 'id = ?', whereArgs: [id]);
-=======
-    await db.delete('habit_logs', where: 'habitId = ?', whereArgs: [id]); // Cascade manually
-    return await db.delete(
-      'habits',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
-  }
-
-  static Future<int> insertHabitLog(HabitLogModel log) async {
-    if (kIsWeb) {
-      final data = await _getWebData('web_habit_logs');
-      final newId = DateTime.now().millisecondsSinceEpoch;
-      final item = HabitLogModel(id: newId, habitId: log.habitId, dateCompleted: log.dateCompleted);
-      data.add(item.toMap());
-      await _saveWebData('web_habit_logs', data);
-      return newId;
-    }
-    final db = await database;
-    return await db.insert('habit_logs', log.toMap());
-  }
-
-  static Future<List<HabitLogModel>> getHabitLogsForHabit(int habitId) async {
-    if (kIsWeb) {
-      final data = await _getWebData('web_habit_logs');
-      final allLogs = data.map((map) => HabitLogModel.fromMap(map)).toList();
-      return allLogs.where((log) => log.habitId == habitId).toList();
-    }
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'habit_logs',
-      where: 'habitId = ?',
-      whereArgs: [habitId],
-    );
-    return List.generate(maps.length, (i) => HabitLogModel.fromMap(maps[i]));
-  }
-
-  static Future<int> deleteHabitLogToday(int habitId) async {
-    final now = DateTime.now();
-    final datePrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    
-    if (kIsWeb) {
-      final data = await _getWebData('web_habit_logs');
-      final initialLength = data.length;
-      data.removeWhere((map) {
-         final d = map['dateCompleted'] as String;
-         return map['habitId'] == habitId && d.startsWith(datePrefix);
-      });
-      if (data.length != initialLength) {
-        await _saveWebData('web_habit_logs', data);
-        return 1;
-      }
-      return 0;
-    }
-    final db = await database;
-    return await db.delete(
-      'habit_logs',
-      where: 'habitId = ? AND dateCompleted LIKE ?',
-      whereArgs: [habitId, '$datePrefix%'],
-    );
   }
 
   // 5. TARGETS
@@ -1276,147 +1074,131 @@ class DbHelper {
     );
   }
 
-  // 9. SUBJECTS
-  static Future<int> insertSubject(SubjectModel subject) async {
+  // 9. FLASHCARD DECKS
+  static Future<int> insertDeck(DeckModel deck) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_subjects');
+      final data = await _getWebData('web_flashcard_decks');
       final newId = DateTime.now().millisecondsSinceEpoch;
-      final item = subject.copyWith(id: newId);
+      final item = deck.copyWith(id: newId);
       data.add(item.toMap());
-      await _saveWebData('web_subjects', data);
+      await _saveWebData('web_flashcard_decks', data);
       return newId;
     }
     final db = await database;
-    return await db.insert('subjects', subject.toMap());
+    return await db.insert('flashcard_decks', deck.toMap());
   }
 
-  static Future<List<SubjectModel>> getAllSubjects() async {
+  static Future<List<DeckModel>> getAllDecks() async {
     if (kIsWeb) {
-      final data = await _getWebData('web_subjects');
-      return data.map((map) => SubjectModel.fromMap(map)).toList();
+      final data = await _getWebData('web_flashcard_decks');
+      return data.map((map) => DeckModel.fromMap(map)).toList();
     }
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('subjects');
-    return List.generate(maps.length, (i) => SubjectModel.fromMap(maps[i]));
+    final List<Map<String, dynamic>> maps = await db.query('flashcard_decks');
+    return List.generate(maps.length, (i) => DeckModel.fromMap(maps[i]));
   }
 
-  static Future<int> updateSubject(SubjectModel subject) async {
+  static Future<int> updateDeck(DeckModel deck) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_subjects');
-      final index = data.indexWhere((map) => map['id'] == subject.id);
+      final data = await _getWebData('web_flashcard_decks');
+      final index = data.indexWhere((map) => map['id'] == deck.id);
       if (index != -1) {
-        data[index] = subject.toMap();
-        await _saveWebData('web_subjects', data);
+        data[index] = deck.toMap();
+        await _saveWebData('web_flashcard_decks', data);
         return 1;
       }
       return 0;
     }
     final db = await database;
     return await db.update(
-      'subjects',
-      subject.toMap(),
+      'flashcard_decks',
+      deck.toMap(),
       where: 'id = ?',
-      whereArgs: [subject.id],
+      whereArgs: [deck.id],
     );
   }
 
-  static Future<int> deleteSubject(int id) async {
+  static Future<int> deleteDeck(int id) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_subjects');
+      final data = await _getWebData('web_flashcard_decks');
       final initialLength = data.length;
       data.removeWhere((map) => map['id'] == id);
       if (data.length != initialLength) {
-        await _saveWebData('web_subjects', data);
-        final glossaries = await _getWebData('web_glossaries');
-        glossaries.removeWhere((item) => item['subjectId'] == id);
-        await _saveWebData('web_glossaries', glossaries);
+        await _saveWebData('web_flashcard_decks', data);
+        // Also delete associated flashcards
+        final cards = await _getWebData('web_flashcards');
+        cards.removeWhere((card) => card['deckId'] == id);
+        await _saveWebData('web_flashcards', cards);
         return 1;
       }
       return 0;
     }
     final db = await database;
-<<<<<<< HEAD
     await db.delete('flashcards', where: 'deckId = ?', whereArgs: [id]);
     return await db.delete('flashcard_decks', where: 'id = ?', whereArgs: [id]);
-=======
-    await db.delete('glossaries', where: 'subjectId = ?', whereArgs: [id]);
-    return await db.delete(
-      'subjects',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
   }
 
-  // 10. GLOSSARIES
-  static Future<int> insertGlossary(GlossaryModel glossary) async {
+  // 10. FLASHCARDS
+  static Future<int> insertFlashcard(FlashcardModel flashcard) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_glossaries');
+      final data = await _getWebData('web_flashcards');
       final newId = DateTime.now().millisecondsSinceEpoch;
-      final item = glossary.copyWith(id: newId);
+      final item = flashcard.copyWith(id: newId);
       data.add(item.toMap());
-      await _saveWebData('web_glossaries', data);
+      await _saveWebData('web_flashcards', data);
       return newId;
     }
     final db = await database;
-    return await db.insert('glossaries', glossary.toMap());
+    return await db.insert('flashcards', flashcard.toMap());
   }
 
-  static Future<List<GlossaryModel>> getAllGlossaries(int subjectId) async {
+  static Future<List<FlashcardModel>> getAllFlashcards(int deckId) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_glossaries');
-      final filtered = data.where((map) => map['subjectId'] == subjectId).toList();
-      return filtered.map((map) => GlossaryModel.fromMap(map)).toList();
+      final data = await _getWebData('web_flashcards');
+      final filtered = data.where((map) => map['deckId'] == deckId).toList();
+      return filtered.map((map) => FlashcardModel.fromMap(map)).toList();
     }
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'glossaries',
-      where: 'subjectId = ?',
-      whereArgs: [subjectId],
+      'flashcards',
+      where: 'deckId = ?',
+      whereArgs: [deckId],
     );
-    return List.generate(maps.length, (i) => GlossaryModel.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => FlashcardModel.fromMap(maps[i]));
   }
 
-  static Future<int> updateGlossary(GlossaryModel glossary) async {
+  static Future<int> updateFlashcard(FlashcardModel flashcard) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_glossaries');
-      final index = data.indexWhere((map) => map['id'] == glossary.id);
+      final data = await _getWebData('web_flashcards');
+      final index = data.indexWhere((map) => map['id'] == flashcard.id);
       if (index != -1) {
-        data[index] = glossary.toMap();
-        await _saveWebData('web_glossaries', data);
+        data[index] = flashcard.toMap();
+        await _saveWebData('web_flashcards', data);
         return 1;
       }
       return 0;
     }
     final db = await database;
     return await db.update(
-      'glossaries',
-      glossary.toMap(),
+      'flashcards',
+      flashcard.toMap(),
       where: 'id = ?',
-      whereArgs: [glossary.id],
+      whereArgs: [flashcard.id],
     );
   }
 
-  static Future<int> deleteGlossary(int id) async {
+  static Future<int> deleteFlashcard(int id) async {
     if (kIsWeb) {
-      final data = await _getWebData('web_glossaries');
+      final data = await _getWebData('web_flashcards');
       final initialLength = data.length;
       data.removeWhere((map) => map['id'] == id);
       if (data.length != initialLength) {
-        await _saveWebData('web_glossaries', data);
+        await _saveWebData('web_flashcards', data);
         return 1;
       }
       return 0;
     }
     final db = await database;
-<<<<<<< HEAD
     return await db.delete('flashcards', where: 'id = ?', whereArgs: [id]);
-=======
-    return await db.delete(
-      'glossaries',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
   }
 }

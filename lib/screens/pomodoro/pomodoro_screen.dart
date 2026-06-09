@@ -9,10 +9,7 @@ import '../../utils/date_helper.dart';
 import 'pomodoro_history_screen.dart';
 
 class PomodoroScreen extends StatefulWidget {
-  final int? taskId;
-  final String? taskTitle;
-
-  const PomodoroScreen({super.key, this.taskId, this.taskTitle});
+  const PomodoroScreen({super.key});
 
   @override
   State<PomodoroScreen> createState() => _PomodoroScreenState();
@@ -28,15 +25,9 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
   int _secondsLeft = 25 * 60;
   bool _isRunning = false;
   bool _isFocusMode = true; // true = Focus, false = Break
-<<<<<<< HEAD
 
   String _selectedCategory = 'Belajar';
   final List<String> _categories = ['Belajar', 'Tugas', 'Projek', 'Lainnya'];
-=======
-  
-  late String _selectedCategory;
-  late List<String> _categories;
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
 
   bool get _notificationsEnabled => SharedPrefService.notification;
   bool get _focusModeEnabled => SharedPrefService.focusMode;
@@ -45,16 +36,6 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
   void initState() {
     super.initState();
     _secondsLeft = _focusDurationMins * 60;
-    
-    _categories = ['Belajar', 'Tugas', 'Projek', 'Lainnya'];
-    if (widget.taskTitle != null) {
-      if (!_categories.contains(widget.taskTitle!)) {
-        _categories.insert(0, widget.taskTitle!);
-      }
-      _selectedCategory = widget.taskTitle!;
-    } else {
-      _selectedCategory = 'Belajar';
-    }
   }
 
   @override
@@ -117,49 +98,17 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Fokus Selesai! 🎉'),
-<<<<<<< HEAD
             content: Text(
               'Selamat! Anda telah menyelesaikan $_focusDurationMins menit fokus untuk kategori $_selectedCategory. Waktunya istirahat sejenak.',
-=======
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Selamat! Anda telah menyelesaikan $_focusDurationMins menit fokus untuk kategori $_selectedCategory. Waktunya istirahat sejenak.'),
-                if (widget.taskId != null) ...[
-                  const SizedBox(height: 16),
-                  const Text('Apakah Task ini sudah tuntas?', style: TextStyle(fontWeight: FontWeight.bold)),
-                ]
-              ],
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
             ),
             actions: [
-              if (widget.taskId != null)
-                TextButton(
-                  onPressed: () async {
-                    final tasks = await DbHelper.getAllTasks();
-                    try {
-                      final task = tasks.firstWhere((t) => t.id == widget.taskId);
-                      await DbHelper.updateTask(task.copyWith(isCompleted: true));
-                    } catch (_) {}
-                    if (mounted) {
-                      Navigator.pop(context);
-                      _switchToBreak();
-                    }
-                  },
-                  child: const Text('Ya, Tuntas'),
-                ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   _switchToBreak();
                 },
-<<<<<<< HEAD
                 child: const Text('Mulai Istirahat'),
               ),
-=======
-                child: Text(widget.taskId != null ? 'Belum' : 'Mulai Istirahat'),
-              )
->>>>>>> 0adf14d3e21ec2ab8c2d5bc896a36b1a7417d553
             ],
           ),
         );

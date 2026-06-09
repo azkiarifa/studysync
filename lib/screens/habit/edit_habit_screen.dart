@@ -18,20 +18,22 @@ class EditHabitScreen extends StatefulWidget {
 class _EditHabitScreenState extends State<EditHabitScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late int _targetDays;
+  late String _selectedFrequency;
+
+  final List<String> _frequencies = ['Daily', 'Weekly'];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.habit.name);
-    _targetDays = widget.habit.targetDaysPerWeek;
+    _selectedFrequency = widget.habit.frequency;
   }
 
   Future<void> _updateHabit() async {
     if (_formKey.currentState!.validate()) {
       final updatedHabit = widget.habit.copyWith(
         name: _nameController.text.trim(),
-        targetDaysPerWeek: _targetDays,
+        frequency: _selectedFrequency,
       );
 
       await DbHelper.updateHabit(updatedHabit);
@@ -70,27 +72,33 @@ class _EditHabitScreenState extends State<EditHabitScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Target Selection
+            // Frequency Selection
             const Text(
-              'Target Hari per Minggu',
+              'Frekuensi',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('$_targetDays Hari', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Slider(
-                  value: _targetDays.toDouble(),
-                  min: 1,
-                  max: 7,
-                  divisions: 6,
-                  activeColor: AppColors.primary,
-                  onChanged: (value) {
-                    setState(() => _targetDays = value.toInt());
-                  },
-                ),
-              ],
+              children: _frequencies.map((f) {
+                final isSelected = _selectedFrequency == f;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: ChoiceChip(
+                    label: Text(f),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() => _selectedFrequency = f);
+                      }
+                    },
+                    selectedColor: AppColors.primary,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 40),
 

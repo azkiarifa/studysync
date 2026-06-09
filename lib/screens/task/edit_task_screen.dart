@@ -8,7 +8,6 @@ import '../../utils/date_helper.dart';
 import '../../utils/validator.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
-import '../pomodoro/pomodoro_screen.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final TaskModel task;
@@ -240,24 +239,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               text: AppText.get('saveChanges'),
               onTap: _updateTask,
               icon: Icons.check_rounded,
-            ),
-            const SizedBox(height: 16),
-            CustomButton(
-              text: 'Start Study Session',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PomodoroScreen(
-                      taskId: widget.task.id,
-                      taskTitle: widget.task.title,
-                    ),
-                  ),
-                );
-              },
-              icon: Icons.timer_rounded,
-              // we can style it differently if there's a variant, 
-              // for now let's just use the default style or pass color if CustomButton supports it.
             ),
           ],
         ),
